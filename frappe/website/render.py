@@ -22,6 +22,7 @@ from frappe.website.utils import (get_home_page, can_cache, delete_page_cache,
 	get_toc, get_next_link)
 from frappe.website.router import clear_sitemap
 from frappe.translate import guess_language
+from bondportal.website.render import is_sub_route
 
 class PageNotFoundError(Exception): pass
 
@@ -37,6 +38,9 @@ def render(path=None, http_status_code=None):
 		path = resolve_path(path)
 		data = None
 
+		sub_route = is_sub_route(path)
+		if sub_route:
+			path = sub_route
 		# if in list of already known 404s, send it
 		if can_cache() and frappe.cache().hget('website_404', frappe.request.url):
 			data = render_page('404')
@@ -377,3 +381,4 @@ def raise_if_disabled(path):
 		_path = r.route.lstrip('/')
 		if path == _path and not r.enabled:
 			raise frappe.PermissionError
+
