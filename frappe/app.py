@@ -135,10 +135,16 @@ def make_form_dict(request):
 		args = request.form or request.args
 
 	try:
+
 		frappe.local.form_dict = frappe._dict({ k:v[0] if isinstance(v, (list, tuple)) else v \
 			for k, v in iteritems(args) })
 	except IndexError:
 		frappe.local.form_dict = frappe._dict(args)
+
+	except AttributeError:
+		# from mailjet
+		if(isinstance(args, list)):
+			frappe.local.form_dict = frappe._dict({"data": args})
 
 	if "_" in frappe.local.form_dict:
 		# _ is passed by $.ajax so that the request is not cached by the browser. So, remove _ from form_dict
