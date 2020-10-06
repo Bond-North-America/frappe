@@ -143,7 +143,7 @@ doc_events = {
 	},
 	"Event": {
 		"after_insert": "bond_erp.bond_crm.events.insert_event_in_google_calendar",
-		"on_update": "frappe.integrations.doctype.google_calendar.google_calendar.update_event_in_google_calendar",
+		"on_update": "bond_erp.bond_crm.events.update_event_in_google_calendar",
 		"on_trash": "frappe.integrations.doctype.google_calendar.google_calendar.delete_event_from_google_calendar",
 	},
 	"Contact": {

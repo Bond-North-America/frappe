@@ -144,7 +144,7 @@ def make_form_dict(request):
 	except AttributeError:
 		# from mailjet
 		if(isinstance(args, list)):
-			frappe.local.form_dict = frappe._dict({"data": args})
+			frappe.local.form_dict = frappe._dict({"Messages": args})
 
 	if "_" in frappe.local.form_dict:
 		# _ is passed by $.ajax so that the request is not cached by the browser. So, remove _ from form_dict
