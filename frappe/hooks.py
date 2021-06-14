@@ -164,11 +164,11 @@ doc_events = {
 			"frappe.automation.doctype.milestone_tracker.milestone_tracker.evaluate_milestone"
 		]
 	},
-	"Event": {
-		"after_insert": "frappe.integrations.doctype.google_calendar.google_calendar.insert_event_in_google_calendar",
-		"on_update": "frappe.integrations.doctype.google_calendar.google_calendar.update_event_in_google_calendar",
-		"on_trash": "frappe.integrations.doctype.google_calendar.google_calendar.delete_event_from_google_calendar",
-	},
+	#"Event": {
+	#	"after_insert": "frappe.integrations.doctype.google_calendar.google_calendar.insert_event_in_google_calendar",
+	#	"on_update": "frappe.integrations.doctype.google_calendar.google_calendar.update_event_in_google_calendar",
+	#	"on_trash": "frappe.integrations.doctype.google_calendar.google_calendar.delete_event_from_google_calendar",
+	#},
 	"Contact": {
 		"after_insert": "frappe.integrations.doctype.google_contacts.google_contacts.insert_contacts_to_google_contacts",
 		"on_update": "frappe.integrations.doctype.google_contacts.google_contacts.update_contacts_to_google_contacts",
