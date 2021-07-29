@@ -429,7 +429,22 @@ def throw(msg, exc=ValidationError, title=None, is_minimizable=None, wide=None, 
 
 	:param msg: Message.
 	:param exc: Exception class. Default `frappe.ValidationError`"""
-	msgprint(msg, raise_exception=exc, title=title, indicator='red', is_minimizable=is_minimizable, wide=wide, as_list=as_list)
+	save_exception(msg=msg, exc=exc, title=title, is_minimizable=is_minimizable, wide=wide, as_list=as_list)
+
+	
+def save_exception(msg, exc=ValidationError, title=None, is_minimizable=None, wide=None, as_list=False):
+	try:
+		msgprint(msg, raise_exception=exc, title=title, indicator='red', is_minimizable=is_minimizable, wide=wide, as_list=as_list)
+	except Exception as e:
+		site_config = get_site_config()
+		if(site_config and site_config.get("log_errors") == 1):
+			_traceback = get_traceback()
+			get_doc({
+				"doctype": "Error Log",
+				"method": title or _("Error"),
+				"error": _traceback,
+			}).insert(ignore_permissions=True)
+		raise e
 
 def emit_js(js, user=False, **kwargs):
 	if user == False:
