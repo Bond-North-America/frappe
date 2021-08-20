@@ -125,7 +125,8 @@ class User(Document):
 			now=now
 		)
 		if self.name not in ('Administrator', 'Guest') and not self.user_image:
-			frappe.enqueue('frappe.core.doctype.user.user.update_gravatar', name=self.name, now=now)
+			#frappe.enqueue('frappe.core.doctype.user.user.update_gravatar', name=self.name, now=now)
+			pass
 
 		# Set user selected timezone
 		if self.time_zone:
