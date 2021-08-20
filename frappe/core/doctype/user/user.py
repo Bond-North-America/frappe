@@ -57,6 +57,7 @@ class User(Document):
 	def after_insert(self):
 		create_notification_settings(self.name)
 		frappe.cache().delete_key('users_for_mentions')
+		frappe.cache().delete_key('enabled_users')
 
 	def validate(self):
 		self.check_demo()
@@ -124,7 +125,8 @@ class User(Document):
 			now=now
 		)
 		if self.name not in ('Administrator', 'Guest') and not self.user_image:
-			frappe.enqueue('frappe.core.doctype.user.user.update_gravatar', name=self.name, now=now)
+			#frappe.enqueue('frappe.core.doctype.user.user.update_gravatar', name=self.name, now=now)
+			pass
 
 		# Set user selected timezone
 		if self.time_zone:
@@ -132,6 +134,9 @@ class User(Document):
 
 		if self.has_value_changed('allow_in_mentions') or self.has_value_changed('user_type'):
 			frappe.cache().delete_key('users_for_mentions')
+
+		if self.has_value_changed('enabled'):
+			frappe.cache().delete_key('enabled_users')
 
 	def has_website_permission(self, ptype, user, verbose=False):
 		"""Returns true if current user is the session user"""
@@ -395,6 +400,8 @@ class User(Document):
 
 		if self.get('allow_in_mentions'):
 			frappe.cache().delete_key('users_for_mentions')
+
+		frappe.cache().delete_key('enabled_users')
 
 
 	def before_rename(self, old_name, new_name, merge=False):
@@ -1234,3 +1241,10 @@ def generate_keys(user):
 def switch_theme(theme):
 	if theme in ["Dark", "Light"]:
 		frappe.db.set_value("User", frappe.session.user, "desk_theme", theme)
+
+def get_enabled_users():
+	def _get_enabled_users():
+		enabled_users = frappe.get_all("User", filters={"enabled": "1"}, pluck="name")
+		return enabled_users
+
+	return frappe.cache().get_value("enabled_users", _get_enabled_users)
