@@ -443,7 +443,8 @@ def save_exception(msg, exc=ValidationError, title=None, is_minimizable=None, wi
 		msgprint(msg, raise_exception=exc, title=title, indicator='red', is_minimizable=is_minimizable, wide=wide, as_list=as_list)
 	except Exception as e:
 		site_config = get_site_config()
-		if(site_config and site_config.get("log_errors") == 1):
+		if(site_config and site_config.get("log_errors") == 1
+			and db.exists("DocType", "Error Log")):
 			_traceback = get_traceback()
 			get_doc({
 				"doctype": "Error Log",
