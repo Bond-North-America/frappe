@@ -19,11 +19,11 @@ import frappe.auth
 import frappe.api
 import frappe.utils.response
 import frappe.website.render
-from frappe.utils import get_site_name, sanitize_html
+from frappe.utils import get_site_base_path, get_site_name, sanitize_html
 from frappe.middlewares import StaticDataMiddleware
 from frappe.utils.error import make_error_snapshot
 from frappe.core.doctype.comment.comment import update_comments_in_parent_after_request
-from frappe import _
+from frappe import _, get_site_path
 import frappe.recorder
 import frappe.monitor
 import frappe.rate_limiter
@@ -108,13 +108,15 @@ def application(request):
 def init_request(request):
 	frappe.local.request = request
 	frappe.local.is_ajax = frappe.get_request_header("X-Requested-With")=="XMLHttpRequest"
-	if(request.headers.get('X-Frappe-Site-Name')):
+	if(request.host.endswith("ngrok.io")):
+		site = _get_ngrok_site()
+	elif(request.headers.get('X-Frappe-Site-Name')):
 		site = request.headers.get('X-Frappe-Site-Name')
 	elif(get_site_name(request.host)):
 		site = get_site_name(request.host)
 	else:
 		site = _site # if it exists
-	
+
 	frappe.init(site=site, sites_path=_sites_path)
 
 	if not (frappe.local.conf and frappe.local.conf.db_name):
@@ -131,6 +133,25 @@ def init_request(request):
 
 	if request.method != "OPTIONS":
 		frappe.local.http_request = frappe.auth.HTTPRequest()
+
+def _get_ngrok_site():
+	site = None
+	try:
+		import json
+		config = frappe._dict()
+		path = os.path.join(os.path.abspath("."), "common_site_config.json")
+		if(os.path.exists(path)):
+			with open(path) as f:
+				config = frappe._dict(json.loads(f.read()))
+			
+		if(config.get("site_map")):
+			if(frappe.local.request.host in config.get("site_map")):
+				site = config.get("site_map").get(frappe.local.request.host)
+
+	except Exception as e:
+		print(frappe.get_traceback())
+
+	return site
 
 def log_request(request, response):
 	if hasattr(frappe.local, 'conf') and frappe.local.conf.enable_frappe_logger:
