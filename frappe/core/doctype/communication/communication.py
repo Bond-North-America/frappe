@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals, absolute_import
 from collections import Counter
+from typing import List
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -339,6 +340,7 @@ def get_permission_query_conditions_for_communication(user):
 		return """`tabCommunication`.email_account in ({email_accounts})"""\
 			.format(email_accounts=','.join(email_accounts))
 
+<<<<<<< HEAD
 def get_contacts(email_strings, auto_create_contact=False):
 	email_addrs = []
 
@@ -348,6 +350,10 @@ def get_contacts(email_strings, auto_create_contact=False):
 			for email in result:
 				email_addrs.append(email[1])
 
+=======
+def get_contacts(email_strings: List[str], auto_create_contact=False) -> List[str]:
+	email_addrs = get_emails(email_strings)
+>>>>>>> version-13
 	contacts = []
 	for email in email_addrs:
 		email = get_email_without_link(email)
@@ -375,6 +381,17 @@ def get_contacts(email_strings, auto_create_contact=False):
 			contacts.append(contact_name)
 
 	return contacts
+
+def get_emails(email_strings: List[str]) -> List[str]:
+	email_addrs = []
+
+	for email_string in email_strings:
+		if email_string:
+			result = getaddresses([email_string])
+			for email in result:
+				email_addrs.append(email[1])
+
+	return email_addrs
 
 def add_contact_links_to_communication(communication, contact_name):
 	contact_links = frappe.get_list("Dynamic Link", filters={
@@ -421,8 +438,12 @@ def get_email_without_link(email):
 	if not frappe.get_all("Email Account", filters={"enable_automatic_linking": 1}):
 		return email
 
-	email_id = email.split("@")[0].split("+")[0]
-	email_host = email.split("@")[1]
+	try:
+		_email = email.split("@")
+		email_id = _email[0].split("+")[0]
+		email_host = _email[1]
+	except IndexError:
+		return email
 
 	return "{0}@{1}".format(email_id, email_host)
 
