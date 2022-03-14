@@ -340,20 +340,8 @@ def get_permission_query_conditions_for_communication(user):
 		return """`tabCommunication`.email_account in ({email_accounts})"""\
 			.format(email_accounts=','.join(email_accounts))
 
-<<<<<<< HEAD
-def get_contacts(email_strings, auto_create_contact=False):
-	email_addrs = []
-
-	for email_string in email_strings:
-		if email_string:
-			result = getaddresses([email_string])
-			for email in result:
-				email_addrs.append(email[1])
-
-=======
 def get_contacts(email_strings: List[str], auto_create_contact=False) -> List[str]:
 	email_addrs = get_emails(email_strings)
->>>>>>> version-13
 	contacts = []
 	for email in email_addrs:
 		email = get_email_without_link(email)

@@ -35,11 +35,7 @@ from frappe.query_builder import get_query_builder, patch_query_execute
 # Lazy imports
 faker = lazy_import('faker')
 
-<<<<<<< HEAD
-__version__ = '13.21.0'
-=======
 __version__ = '13.22.1'
->>>>>>> version-13
 
 __title__ = "Frappe Framework"
 

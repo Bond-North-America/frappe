@@ -4,11 +4,7 @@
 from __future__ import unicode_literals
 import frappe, json, os
 import unittest
-<<<<<<< HEAD
-from frappe.desk.query_report import run, save_report
-=======
 from frappe.desk.query_report import run, save_report, add_total_row
->>>>>>> version-13
 from frappe.desk.reportview import delete_report, save_report as _save_report
 from frappe.custom.doctype.customize_form.customize_form import reset_customization
 from frappe.core.doctype.user_permission.test_user_permission import create_user

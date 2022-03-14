@@ -19,7 +19,6 @@ import frappe.monitor
 from frappe import _
 from frappe.utils import cstr
 
-<<<<<<< HEAD
 common_site_config = frappe.get_file_json("common_site_config.json")
 custom_workers_config = common_site_config.get("workers", {})
 default_timeout = 300
@@ -32,7 +31,6 @@ queue_timeout = {
 		for worker, config in custom_workers_config.items()
 	}
 }
-=======
 
 @lru_cache()
 def get_queues_timeout():
@@ -49,7 +47,6 @@ def get_queues_timeout():
 			for worker, config in custom_workers_config.items()
 		}
 	}
->>>>>>> version-13
 
 redis_connection = None
 
