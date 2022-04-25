@@ -33,6 +33,7 @@ class Database(object):
 	VARCHAR_LEN = 140
 	MAX_COLUMN_LENGTH = 64
 
+<<<<<<< HEAD
 	OPTIONAL_COLUMNS = ["_user_tags", "_comments", "_assign", "_liked_by"]
 	DEFAULT_SHORTCUTS = ['_Login', '__user', '_Full Name', 'Today', '__today', "now", "Now"]
 	STANDARD_VARCHAR_COLUMNS = ('name', 'owner', 'modified_by', 'parent', 'parentfield', 'parenttype')
@@ -41,6 +42,16 @@ class Database(object):
 	MAX_WRITES_PER_TRANSACTION = 200_000
 
 	class InvalidColumnName(frappe.ValidationError): pass
+=======
+	Args:
+	        key (str): field
+	        value (str): criterion
+
+	Returns:
+	        frappe.qb: `frappe.qb object with `LIKE`
+	"""
+	return Field(key).like(value)
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 
 
 	def __init__(self, host=None, user=None, password=None, ac_name=None, use_default=0, port=None):
@@ -51,11 +62,22 @@ class Database(object):
 		self.db_name = frappe.conf.db_name
 		self._conn = None
 
+<<<<<<< HEAD
 		if ac_name:
 			self.user = ac_name or frappe.conf.db_name
 
 		if use_default:
 			self.user = frappe.conf.db_name
+=======
+	Args:
+	        key (str): field
+	        value (Union[int, str]): criterion
+
+	Returns:
+	        frappe.qb: `frappe.qb object with `IN`
+	"""
+	return Field(key).isin(value)
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 
 		self.transaction_writes = 0
 		self.auto_commit_on_many_writes = 0
@@ -64,6 +86,7 @@ class Database(object):
 		self.value_cache = {}
 		self.query = Query()
 
+<<<<<<< HEAD
 	def setup_type_map(self):
 		pass
 
@@ -73,6 +96,16 @@ class Database(object):
 		self._conn = self.get_connection()
 		self._cursor = self._conn.cursor()
 		frappe.local.rollback_observers = []
+=======
+	Args:
+	        key (str): field
+	        value (str): criterion
+
+	Returns:
+	        frappe.qb: `frappe.qb object with `NOT LIKE`
+	"""
+	return Field(key).not_like(value)
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 
 	def use(self, db_name):
 		"""`USE` db_name."""
@@ -81,12 +114,23 @@ class Database(object):
 	def get_connection(self):
 		pass
 
+<<<<<<< HEAD
 	def get_database_size(self):
 		pass
 
 	def sql(self, query, values=(), as_dict = 0, as_list = 0, formatted = 0,
 		debug=0, ignore_ddl=0, as_utf8=0, auto_commit=0, update=None, explain=False):
 		"""Execute a SQL query and fetch all rows.
+=======
+	Args:
+	        key (str): field
+	        value (Union[int, str]): criterion
+
+	Returns:
+	        frappe.qb: `frappe.qb object with `NOT IN`
+	"""
+	return Field(key).notin(value)
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 
 		:param query: SQL query.
 		:param values: List / dict of values to be escaped and substituted in the query.
@@ -101,11 +145,22 @@ class Database(object):
 
 		Examples:
 
+<<<<<<< HEAD
 			# return customer names as dicts
 			frappe.db.sql("select name from tabCustomer", as_dict=True)
 
 			# return names beginning with a
 			frappe.db.sql("select name from tabCustomer where name like %s", "a%")
+=======
+	Args:
+	        key (str): field
+	        value (str): criterion
+
+	Returns:
+	        frappe.qb: `frappe.qb object with `REGEX`
+	"""
+	return Field(key).regex(value)
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 
 			# values as dict
 			frappe.db.sql("select name from tabCustomer where name like %(name)s and owner=%(owner)s",
@@ -117,6 +172,7 @@ class Database(object):
 			# replaces ifnull in query with coalesce
 			query = re.sub(r'ifnull\(', 'coalesce(', query, flags=re.IGNORECASE)
 
+<<<<<<< HEAD
 		if not self._conn:
 			self.connect()
 
@@ -132,6 +188,29 @@ class Database(object):
 		try:
 			if debug:
 				time_start = time()
+=======
+	Args:
+	        key (str): field
+	        value (Union[int, str]): criterion
+
+	Returns:
+	        frappe.qb: `frappe.qb object with `BETWEEN`
+	"""
+	return Field(key)[slice(*value)]
+
+
+def make_function(key: Any, value: Union[int, str]):
+	"""returns fucntion query
+
+	Args:
+	        key (Any): field
+	        value (Union[int, str]): criterion
+
+	Returns:
+	        frappe.qb: frappe.qb object
+	"""
+	return OPERATOR_MAP[value[0]](key, value[1])
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 
 			self.log_query(query, values, debug, explain)
 
@@ -139,6 +218,7 @@ class Database(object):
 				if isinstance(values, dict):
 					values = dict(values)
 
+<<<<<<< HEAD
 				# MySQL-python==1.2.5 hack!
 				if not isinstance(values, (dict, tuple, list)):
 					values = (values,)
@@ -245,6 +325,49 @@ class Database(object):
 
 			# doctypes = ["DocType", "DocField", "User", ...]
 			doctypes = frappe.db.sql_list("select name from DocType")
+=======
+	Args:
+	        order (str): Field, order
+
+	Returns:
+	        tuple: field, order
+	"""
+	order = order.split()
+	if order[1].lower() == "asc":
+		orderby, order = order[0], Order.asc
+		return orderby, order
+	orderby, order = order[0], Order.desc
+	return orderby, order
+
+
+OPERATOR_MAP = {
+	"+": operator.add,
+	"=": operator.eq,
+	"-": operator.sub,
+	"!=": operator.ne,
+	"<": operator.lt,
+	">": operator.gt,
+	"<=": operator.le,
+	">=": operator.ge,
+	"in": func_in,
+	"not in": func_not_in,
+	"like": like,
+	"not like": not_like,
+	"regex": func_regex,
+	"between": func_between,
+}
+
+
+class Query:
+	def get_condition(self, table: str, **kwargs) -> frappe.qb:
+		"""Get initial table object
+
+		Args:
+		        table (str): DocType
+
+		Returns:
+		        frappe.qb: DocType with initial condition
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 		"""
 		return [r[0] for r in self.sql(query, values, debug=debug)]
 
@@ -297,6 +420,7 @@ class Database(object):
 		if query and query.strip().split()[0].lower() in {'drop', 'create'}:
 			frappe.cache().delete_key('db_tables')
 
+<<<<<<< HEAD
 	@staticmethod
 	def needs_formatting(result, formatted):
 		"""Returns true if the first row in the result has a Date, Datetime, Long Int."""
@@ -332,6 +456,14 @@ class Database(object):
 
 		* ifnull(`fieldname`, default_value) = %(fieldname)s
 		* `fieldname` [=, !=, >, >=, <, <=] %(fieldname)s
+=======
+		Args:
+		        table (str): DocType
+		        criterion (Criterion): Filters
+
+		Returns:
+		        frappe.qb: condition object
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 		"""
 		conditions = []
 		values = {}
@@ -383,6 +515,7 @@ class Database(object):
 		"""Returns `get_value` with fieldname='*'"""
 		return self.get_value(doctype, filters, "*", as_dict=as_dict, cache=cache)
 
+<<<<<<< HEAD
 	def get_value(self, doctype, filters=None, fieldname="name", ignore=None, as_dict=False,
 		debug=False, order_by=None, cache=False, for_update=False):
 		"""Returns a document property or list of properties.
@@ -408,6 +541,13 @@ class Database(object):
 
 			# returns default date_format
 			frappe.db.get_value("System Settings", None, "date_format")
+=======
+		Args:
+		        conditions (frappe.qb): built conditions
+
+		Returns:
+		        conditions (frappe.qb): frappe.qb object
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 		"""
 
 		ret = self.get_values(doctype, filters, fieldname, ignore, as_dict, debug,
@@ -432,8 +572,14 @@ class Database(object):
 			# return first customer starting with a
 			customers = frappe.db.get_values("Customer", {"name": ("like a%")})
 
+<<<<<<< HEAD
 			# return last login of **User** `test@example.com`
 			user = frappe.db.get_values("User", "test@example.com", "*")[0]
+=======
+		Args:
+		        table (str): DocType
+		        filters (Union[List, Tuple], optional): Filters. Defaults to None.
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 		"""
 		out = None
 		if cache and isinstance(filters, string_types) and \
@@ -472,6 +618,7 @@ class Database(object):
 		if cache and isinstance(filters, string_types):
 			self.value_cache[(doctype, filters, fieldname)] = out
 
+<<<<<<< HEAD
 		return out
 
 	def get_values_from_single(self, fields, filters, doctype, as_dict=False, debug=False, update=None):
@@ -480,6 +627,19 @@ class Database(object):
 		:param fields: List of fields,
 		:param filters: Filters (dict).
 		:param doctype: DocType name.
+=======
+	def dict_query(
+		self, table: str, filters: Dict[str, Union[str, int]] = None, **kwargs
+	) -> frappe.qb:
+		"""Build conditions using the given dictionary filters
+
+		Args:
+		        table (str): DocType
+		        filters (Dict[str, Union[str, int]], optional): Filters. Defaults to None.
+
+		Returns:
+		        frappe.qb: conditions object
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 		"""
 		# TODO
 		# if not frappe.model.meta.is_single(doctype):
@@ -603,6 +763,7 @@ class Database(object):
 				if "(" in f or " as " in f: # function
 					fl.append(f)
 				else:
+<<<<<<< HEAD
 					fl.append("`" + f + "`")
 			fl = ", ".join(fl)
 		else:
@@ -657,6 +818,26 @@ class Database(object):
 		:param update_modified: default True. Set as false, if you don't want to update the timestamp.
 		:param debug: Print the query in the developer / js console.
 		:param for_update: Will add a row-level lock to the value that is being set so that it can be released on commit.
+=======
+					_table = conditions._from[0]
+					field = getattr(_table, key)
+					conditions = conditions.where(field.isnull())
+
+		conditions = self.add_conditions(conditions, **kwargs)
+		return conditions
+
+	def build_conditions(
+		self, table: str, filters: Union[Dict[str, Union[str, int]], str, int] = None, **kwargs
+	) -> frappe.qb:
+		"""Build conditions for sql query
+
+		Args:
+		        filters (Union[Dict[str, Union[str, int]], str, int]): conditions in Dict
+		        table (str): DocType
+
+		Returns:
+		        frappe.qb: frappe.qb conditions object
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 		"""
 		is_single_doctype = not (dn and dt != dn)
 		to_update = field if isinstance(field, dict) else {field: val}
@@ -879,6 +1060,7 @@ class Database(object):
 				from `tab%s` where %s""" % (dt, conditions), filters, debug=debug)[0][0]
 			return count
 		else:
+<<<<<<< HEAD
 			count = self.sql("""select count(*)
 				from `tab%s`""" % (dt,))[0][0]
 
@@ -1103,3 +1285,38 @@ def enqueue_jobs_after_commit():
 			q.enqueue_call(execute_job, timeout=job.get("timeout"),
 							kwargs=job.get("queue_args"))
 		frappe.flags.enqueue_after_commit = []
+=======
+			query = criterion.select(fields)
+
+		return query
+
+
+class Permission:
+	@classmethod
+	def check_permissions(cls, query, **kwargs):
+		if not isinstance(query, str):
+			query = query.get_sql()
+
+		doctype = cls.get_tables_from_query(query)
+		if isinstance(doctype, str):
+			doctype = [doctype]
+
+		for dt in doctype:
+			dt = re.sub("^tab", "", dt)
+			if not frappe.has_permission(
+				dt,
+				"select",
+				user=kwargs.get("user"),
+				parent_doctype=kwargs.get("parent_doctype"),
+			) and not frappe.has_permission(
+				dt,
+				"read",
+				user=kwargs.get("user"),
+				parent_doctype=kwargs.get("parent_doctype"),
+			):
+				frappe.throw(_("Insufficient Permission for {0}").format(frappe.bold(dt)))
+
+	@staticmethod
+	def get_tables_from_query(query: str):
+		return [table for table in re.findall(r"\w+", query) if table.startswith("tab")]
+>>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
