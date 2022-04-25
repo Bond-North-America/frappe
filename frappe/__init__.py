@@ -500,6 +500,7 @@ def throw(msg, exc=ValidationError, title=None, is_minimizable=None, wide=None, 
 
 	:param msg: Message.
 	:param exc: Exception class. Default `frappe.ValidationError`"""
+	save_exception(msg, exc, title, is_minimizable, wide, as_list)
 
 def save_exception(msg, exc=ValidationError, title=None, is_minimizable=None, wide=None, as_list=False):
 	try:
