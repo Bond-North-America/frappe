@@ -125,14 +125,8 @@ class User(Document):
 		frappe.enqueue(
 			"frappe.core.doctype.user.user.create_contact", user=self, ignore_mandatory=True, now=now
 		)
-<<<<<<< HEAD
-		if self.name not in ('Administrator', 'Guest') and not self.user_image:
-			#frappe.enqueue('frappe.core.doctype.user.user.update_gravatar', name=self.name, now=now)
-			pass
-=======
 		if self.name not in ("Administrator", "Guest") and not self.user_image:
 			frappe.enqueue("frappe.core.doctype.user.user.update_gravatar", name=self.name, now=now)
->>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 
 		# Set user selected timezone
 		if self.time_zone:

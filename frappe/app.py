@@ -22,23 +22,11 @@ import frappe.rate_limiter
 import frappe.recorder
 import frappe.utils.response
 import frappe.website.render
-<<<<<<< HEAD
-from frappe.utils import get_site_base_path, get_site_name, sanitize_html
-=======
 from frappe import _
 from frappe.core.doctype.comment.comment import update_comments_in_parent_after_request
->>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 from frappe.middlewares import StaticDataMiddleware
 from frappe.utils import get_site_name, sanitize_html
 from frappe.utils.error import make_error_snapshot
-<<<<<<< HEAD
-from frappe.core.doctype.comment.comment import update_comments_in_parent_after_request
-from frappe import _, get_site_path
-import frappe.recorder
-import frappe.monitor
-import frappe.rate_limiter
-=======
->>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 
 local_manager = LocalManager([frappe.local])
 
@@ -121,7 +109,6 @@ def application(request):
 
 def init_request(request):
 	frappe.local.request = request
-<<<<<<< HEAD
 	frappe.local.is_ajax = frappe.get_request_header("X-Requested-With")=="XMLHttpRequest"
 	if(request.host.endswith("ngrok.io")):
 		site = _get_ngrok_site()
@@ -132,11 +119,6 @@ def init_request(request):
 	else:
 		site = _site # if it exists
 
-=======
-	frappe.local.is_ajax = frappe.get_request_header("X-Requested-With") == "XMLHttpRequest"
-
-	site = _site or request.headers.get("X-Frappe-Site-Name") or get_site_name(request.host)
->>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 	frappe.init(site=site, sites_path=_sites_path)
 
 	if not (frappe.local.conf and frappe.local.conf.db_name):
@@ -154,7 +136,6 @@ def init_request(request):
 	if request.method != "OPTIONS":
 		frappe.local.http_request = frappe.auth.HTTPRequest()
 
-<<<<<<< HEAD
 def _get_ngrok_site():
 	site = None
 	try:
@@ -173,8 +154,6 @@ def _get_ngrok_site():
 		print(frappe.get_traceback())
 
 	return site
-=======
->>>>>>> d4841911b80cee9fca42fdab51214b4db7ced897
 
 def log_request(request, response):
 	if hasattr(frappe.local, "conf") and frappe.local.conf.enable_frappe_logger:
