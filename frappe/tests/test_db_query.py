@@ -564,6 +564,50 @@ class TestReportview(unittest.TestCase):
 			response["keys"], ["field_label", "field_name", "_aggregate_column", "columns"]
 		)
 
+	def test_fieldname_starting_with_int(self):
+		from frappe.core.doctype.doctype.test_doctype import new_doctype
+
+		dt = new_doctype(
+			"dt_with_int_named_fieldname",
+			fields=[{"label": "1field", "fieldname": "1field", "fieldtype": "Data"}],
+		).insert(ignore_permissions=True)
+
+		frappe.get_doc({"doctype": "dt_with_int_named_fieldname", "1field": "10"}).insert(
+			ignore_permissions=True
+		)
+
+		query = DatabaseQuery("dt_with_int_named_fieldname")
+		self.assertTrue(query.execute(filters={"1field": "10"}))
+		self.assertTrue(query.execute(filters={"1field": ["like", "1%"]}))
+		self.assertTrue(query.execute(filters={"1field": ["in", "1,2,10"]}))
+		self.assertTrue(query.execute(filters={"1field": ["is", "set"]}))
+		self.assertFalse(query.execute(filters={"1field": ["not like", "1%"]}))
+
+		dt.delete()
+
+	def test_permission_query_condition(self):
+		from frappe.desk.doctype.dashboard_settings.dashboard_settings import create_dashboard_settings
+
+		self.doctype = "Dashboard Settings"
+		self.user = "test'5@example.com"
+
+		permission_query_conditions = DatabaseQuery.get_permission_query_conditions(self)
+
+		create_dashboard_settings(self.user)
+
+		dashboard_settings = frappe.db.sql(
+			"""
+				SELECT name
+				FROM `tabDashboard Settings`
+				WHERE {condition}
+			""".format(
+				condition=permission_query_conditions
+			),
+			as_dict=1,
+		)[0]
+
+		self.assertTrue(dashboard_settings)
+
 
 def add_child_table_to_blog_post():
 	child_table = frappe.get_doc(
