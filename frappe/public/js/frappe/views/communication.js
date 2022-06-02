@@ -769,8 +769,7 @@ frappe.views.CommunicationComposer = class {
 				fields: ['signature', 'email_id'],
 				limit: 1
 			});
-
-			signature = email && email[0].signature;
+			signature = email.length && email[0].signature;
 
 			if (this.user_email_accounts &&
 				this.user_email_accounts.includes(email[0].email_id)) {
