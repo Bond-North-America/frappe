@@ -1727,8 +1727,8 @@ def expand_relative_urls(html):
 
 	def _expand_relative_urls(match):
 		to_expand = list(match.groups())
-		
-		if not (to_expand[2].startswith("mailto") or to_expand[2].startswith("tel")) and not to_expand[2].startswith("data:"):
+
+		if not to_expand[2].startswith("mailto") and not to_expand[2].startswith("data:"):
 			if not to_expand[2].startswith("/"):
 				to_expand[2] = "/" + to_expand[2]
 			to_expand.insert(2, url)
@@ -1773,6 +1773,16 @@ def unique(seq):
 def strip(val, chars=None):
 	# \ufeff is no-width-break, \u200b is no-width-space
 	return (val or "").replace("\ufeff", "").replace("\u200b", "").strip(chars)
+
+
+def get_string_between(start, string, end):
+	if not string:
+		return ""
+
+	regex = "{0}(.*){1}".format(start, end)
+	out = re.search(regex, string)
+
+	return out.group(1) if out else string
 
 
 def to_markdown(html):
@@ -1982,3 +1992,4 @@ def parse_timedelta(s: str) -> datetime.timedelta:
 		m = re.match(r"(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d[\.\d+]*)", s)
 
 	return datetime.timedelta(**{key: float(val) for key, val in m.groupdict().items()})
+
