@@ -505,10 +505,10 @@ frappe.ui.Page = Class.extend({
 
 		if (!label || !parent) return false;
 
-		const item_selector = `${selector}[data-label='${encodeURIComponent(label)}']`;
+		const item_selector = `${selector}[data-label="${encodeURIComponent(label)}"]`;
 
 		const existing_items = $(parent).find(item_selector);
-		return existing_items && existing_items.length > 0;
+		if (existing_items && existing_items.length > 0) return existing_items;
 	},
 
 	clear_btn_group: function(parent) {
