@@ -117,7 +117,7 @@ def init_request(request):
 	elif(get_site_name(request.host)):
 		site = get_site_name(request.host)
 	else:
-		site = _site # if it exists
+		site = _site # if it existsz
 
 	frappe.init(site=site, sites_path=_sites_path)
 
@@ -145,7 +145,7 @@ def _get_ngrok_site():
 		if(os.path.exists(path)):
 			with open(path) as f:
 				config = frappe._dict(json.loads(f.read()))
-			
+
 		if(config.get("site_map")):
 			if(frappe.local.request.host in config.get("site_map")):
 				site = config.get("site_map").get(frappe.local.request.host)
