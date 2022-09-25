@@ -245,21 +245,24 @@ frappe.router = {
 		// example 2: frappe.set_route(['a', 'b', 'c']);
 		// example 3: frappe.set_route('a/b/c');
 		let route = Array.from(arguments);
+		try{
+			return new Promise(resolve => {
+				route = this.get_route_from_arguments(route);
+				route = this.convert_from_standard_route(route);
+				let sub_path = this.make_url(route);
+				// replace each # occurrences in the URL with encoded character except for last
+				// sub_path = sub_path.replace(/[#](?=.*[#])/g, "%23");
+				this.push_state(sub_path);
 
-		return new Promise(resolve => {
-			route = this.get_route_from_arguments(route);
-			route = this.convert_from_standard_route(route);
-			let sub_path = this.make_url(route);
-			// replace each # occurrences in the URL with encoded character except for last
-			// sub_path = sub_path.replace(/[#](?=.*[#])/g, "%23");
-			this.push_state(sub_path);
-
-			setTimeout(() => {
-				frappe.after_ajax && frappe.after_ajax(() => {
-					resolve();
-				});
-			}, 100);
-		}).finally(() => frappe.route_flags = {});
+				setTimeout(() => {
+					frappe.after_ajax && frappe.after_ajax(() => {
+						resolve();
+					});
+				}, 100);
+			}).finally(() => frappe.route_flags = {});
+		}catch(e){
+			console.log("Error while setting route");
+		}
 	},
 
 	get_route_from_arguments(route) {
