@@ -244,15 +244,18 @@ class DesktopPage {
 		this.page = $(`<div class="desk-page" data-page-name=${this.page_name}></div>`);
 		this.page.append(frappe.render_template('workspace_loading_skeleton'));
 		this.page.appendTo(this.container);
-
-		this.get_data().then(() => {
-			if (Object.keys(this.data).length == 0) {
-				delete localStorage.current_workspace;
-				frappe.set_route("workspace");
-				return;
-			}
-			this.refresh();
-		}).finally(this.page.find('.workspace_loading_skeleton').remove);
+		try{
+			this.get_data().then(() => {
+				if (Object.keys(this.data).length == 0) {
+					delete localStorage.current_workspace;
+					frappe.set_route("workspace");
+					return;
+				}
+				this.refresh();
+			}).finally(this.page.find('.workspace_loading_skeleton').remove);
+		}catch(e){
+			console.log("error while setting up workspace");
+		}
 	}
 
 	refresh() {
@@ -270,19 +273,23 @@ class DesktopPage {
 	}
 
 	get_data() {
-		return frappe.xcall("frappe.desk.desktop.get_desktop_page", {
-			page: this.page_name
-		}).then(data => {
-			this.data = data;
-			if (Object.keys(this.data).length == 0) return;
+		return new Promise((resolve, reject)=>{
+			return frappe.xcall("frappe.desk.desktop.get_desktop_page", {
+				page: this.page_name
+			}).then(data=> {
+				this.data = data;
+				console.log(data);
+				if (Object.keys(this.data).length == 0) resolve();
 
-			return frappe.dashboard_utils.get_dashboard_settings().then(settings => {
-				let chart_config = settings.chart_config ? JSON.parse(settings.chart_config) : {};
-				if (this.data.charts.items) {
-					this.data.charts.items.map(chart => {
-						chart.chart_settings = chart_config[chart.chart_name] || {};
-					});
-				}
+				frappe.dashboard_utils.get_dashboard_settings().then(settings => {
+					let chart_config = settings.chart_config ? JSON.parse(settings.chart_config) : {};
+					if (this.data.charts.items) {
+						this.data.charts.items.map(chart => {
+							chart.chart_settings = chart_config[chart.chart_name] || {};
+						});
+					}
+				});
+				resolve();
 			});
 		});
 	}
