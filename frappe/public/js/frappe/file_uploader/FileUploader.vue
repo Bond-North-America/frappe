@@ -65,7 +65,7 @@
 					</button>
 					<button v-if="google_drive_settings.enabled" class="btn btn-file-upload" @click="show_google_drive_picker">
 						<svg width="30" height="30">
-							<image xlink:href="/assets/frappe/icons/social/google_drive.svg" width="30" height="30"/>
+							<image href="/assets/frappe/icons/social/google_drive.svg" width="30" height="30"/>
 						</svg>
 						<div class="mt-1">{{ __('Google Drive') }}</div>
 					</button>
@@ -156,6 +156,9 @@ export default {
 		},
 		on_success: {
 			default: null
+		},
+		make_attachments_public: {
+			default: null,
 		},
 		restrictions: {
 			default: () => ({
@@ -264,7 +267,7 @@ export default {
 						total: 0,
 						failed: false,
 						uploading: false,
-						private: !is_image
+						private: !this.make_attachments_public,
 					}
 				});
 			this.files = this.files.concat(files);

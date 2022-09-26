@@ -7,7 +7,7 @@ import io
 import json
 import os
 import timeit
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 import frappe
 from frappe import _
@@ -854,11 +854,13 @@ class Column:
 		"""
 
 		def guess_date_format(d):
-			if isinstance(d, (datetime, date)):
+			if isinstance(d, (datetime, date, time)):
 				if self.df.fieldtype == "Date":
 					return "%Y-%m-%d"
 				if self.df.fieldtype == "Datetime":
 					return "%Y-%m-%d %H:%M:%S"
+				if self.df.fieldtype == "Time":
+					return "%H:%M:%S"
 			if isinstance(d, str):
 				return frappe.utils.guess_date_format(d)
 
@@ -903,26 +905,32 @@ class Column:
 			not_exists = list(set(values) - set(exists))
 			if not_exists:
 				missing_values = ", ".join(not_exists)
+				message = _("The following values do not exist for {0}: {1}")
 				self.warnings.append(
 					{
 						"col": self.column_number,
-						"message": (
-							"The following values do not exist for {}: {}".format(self.df.options, missing_values)
-						),
+						"message": message.format(self.df.options, missing_values),
 						"type": "warning",
 					}
 				)
 		elif self.df.fieldtype in ("Date", "Time", "Datetime"):
-			# guess date format
+			# guess date/time format
 			self.date_format = self.guess_date_format_for_column()
 			if not self.date_format:
-				self.date_format = "%Y-%m-%d"
+				if self.df.fieldtype == "Time":
+					self.date_format = "%H:%M:%S"
+					date_format = "HH:mm:ss"
+				else:
+					self.date_format = "%Y-%m-%d"
+					date_format = "yyyy-mm-dd"
+
+				message = _(
+					"{0} format could not be determined from the values in this column. Defaulting to {1}."
+				)
 				self.warnings.append(
 					{
 						"col": self.column_number,
-						"message": _(
-							"Date format could not be determined from the values in this column. Defaulting to yyyy-mm-dd."
-						),
+						"message": message.format(self.df.fieldtype, date_format),
 						"type": "info",
 					}
 				)
@@ -932,15 +940,13 @@ class Column:
 				values = list(set([cstr(v) for v in self.column_values[1:] if v]))
 				invalid = list(set(values) - set(options))
 				if invalid:
-					valid_values = ", ".join([frappe.bold(o) for o in options])
-					invalid_values = ", ".join([frappe.bold(i) for i in invalid])
+					valid_values = ", ".join(frappe.bold(o) for o in options)
+					invalid_values = ", ".join(frappe.bold(i) for i in invalid)
+					message = _("The following values are invalid: {0}. Values must be one of {1}")
 					self.warnings.append(
 						{
 							"col": self.column_number,
-							"message": (
-								"The following values are invalid: {0}. Values must be"
-								" one of {1}".format(invalid_values, valid_values)
-							),
+							"message": message.format(invalid_values, valid_values),
 						}
 					)
 

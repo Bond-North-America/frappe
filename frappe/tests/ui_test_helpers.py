@@ -292,3 +292,67 @@ def update_child_table(name):
 		)
 
 		doc.save()
+
+
+@frappe.whitelist()
+def insert_translations():
+	translation = [
+		{
+			"doctype": "Translation",
+			"language": "de",
+			"source_text": "Other",
+			"translated_text": "Sonstiges",
+		},
+		{
+			"doctype": "Translation",
+			"language": "de",
+			"source_text": "Genderqueer",
+			"translated_text": "Nichtbinär",
+		},
+		{
+			"doctype": "Translation",
+			"language": "de",
+			"source_text": "Non-Conforming",
+			"translated_text": "Nicht konform",
+		},
+		{
+			"doctype": "Translation",
+			"language": "de",
+			"source_text": "Prefer not to say",
+			"translated_text": "Keine Angabe",
+		},
+	]
+
+	for doc in translation:
+		if not frappe.db.exists("doc"):
+			frappe.get_doc(doc).insert()
+
+
+@frappe.whitelist()
+def create_blog_post():
+
+	blog_category = frappe.get_doc(
+		{"name": "general", "doctype": "Blog Category", "title": "general"}
+	).insert(ignore_if_duplicate=True)
+
+	blogger = frappe.get_doc(
+		{
+			"name": "attachment blogger",
+			"doctype": "Blogger",
+			"full_name": "attachment blogger",
+			"short_name": "attachment blogger",
+		}
+	).insert(ignore_if_duplicate=True)
+
+	doc = frappe.get_doc(
+		{
+			"name": "test-blog-attachment-post",
+			"doctype": "Blog Post",
+			"title": "test-blog-attachment-post",
+			"blog_category": blog_category.name,
+			"blogger": blogger.name,
+			"content_type": "Rich Text",
+		},
+	).insert(ignore_if_duplicate=True)
+
+	return doc

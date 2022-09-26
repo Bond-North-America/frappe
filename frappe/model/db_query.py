@@ -33,6 +33,17 @@ from frappe.utils import (
 	make_filter_tuple,
 )
 
+SUB_QUERY_PATTERN = re.compile("^.*[,();@].*")
+IS_QUERY_PATTERN = re.compile(r"^(select|delete|update|drop|create)\s")
+IS_QUERY_PREDICATE_PATTERN = re.compile(
+	r"\s*[0-9a-zA-z]*\s*( from | group by | order by | where | join )"
+)
+FIELD_QUOTE_PATTERN = re.compile(r"[0-9a-zA-Z]+\s*'")
+FIELD_COMMA_PATTERN = re.compile(r"[0-9a-zA-Z]+\s*,")
+STRICT_FIELD_PATTERN = re.compile(r".*/\*.*")
+STRICT_UNION_PATTERN = re.compile(r".*\s(union).*\s")
+ORDER_GROUP_PATTERN = re.compile(r".*[^a-z0-9-_ ,`'\"\.\(\)].*")
+
 
 class DatabaseQuery(object):
 	def __init__(self, doctype, user=None):
@@ -306,8 +317,6 @@ class DatabaseQuery(object):
 		As field contains `,` and mysql function `version()`, with the help of regex
 		the system will filter out this field.
 		"""
-
-		sub_query_regex = re.compile("^.*[,();@].*")
 		blacklisted_keywords = ["select", "create", "insert", "delete", "drop", "update", "case", "show"]
 		blacklisted_functions = [
 			"concat",
@@ -331,20 +340,15 @@ class DatabaseQuery(object):
 			frappe.throw(_("Use of sub-query or function is restricted"), frappe.DataError)
 
 		def _is_query(field):
-			if re.compile(r"^(select|delete|update|drop|create)\s").match(field):
+			if IS_QUERY_PATTERN.match(field):
 				_raise_exception()
 
-			elif re.compile(r"\s*[0-9a-zA-z]*\s*( from | group by | order by | where | join )").match(
-				field
-			):
+			elif IS_QUERY_PREDICATE_PATTERN.match(field):
 				_raise_exception()
 
 		for field in self.fields:
-			if sub_query_regex.match(field):
-				if any(keyword in field.lower().split() for keyword in blacklisted_keywords):
-					_raise_exception()
-
-				if any("({0}".format(keyword) in field.lower() for keyword in blacklisted_keywords):
+			if SUB_QUERY_PATTERN.match(field):
+				if any(f"({keyword}" in field.lower() for keyword in blacklisted_keywords):
 					_raise_exception()
 
 				if any("{0}(".format(keyword) in field.lower() for keyword in blacklisted_functions):
@@ -354,19 +358,19 @@ class DatabaseQuery(object):
 					# prevent access to global variables
 					_raise_exception()
 
-			if re.compile(r"[0-9a-zA-Z]+\s*'").match(field):
+			if FIELD_QUOTE_PATTERN.match(field):
 				_raise_exception()
 
-			if re.compile(r"[0-9a-zA-Z]+\s*,").match(field):
+			if FIELD_COMMA_PATTERN.match(field):
 				_raise_exception()
 
 			_is_query(field)
 
 			if self.strict:
-				if re.compile(r".*/\*.*").match(field):
+				if STRICT_FIELD_PATTERN.match(field):
 					frappe.throw(_("Illegal SQL Query"))
 
-				if re.compile(r".*\s(union).*\s").match(field.lower()):
+				if STRICT_UNION_PATTERN.match(field.lower()):
 					frappe.throw(_("Illegal SQL Query"))
 
 	def extract_tables(self):
@@ -555,6 +559,12 @@ class DatabaseQuery(object):
 			)
 
 		elif f.operator.lower() in ("in", "not in"):
+			# if values contain '' or falsy values then only coalesce column
+			# for `in` query this is only required if values contain '' or values are empty.
+			# for `not in` queries we can't be sure as column values might contain null.
+			if f.operator.lower() == "in":
+				can_be_null = not f.value or any(v is None or v == "" for v in f.value)
+
 			values = f.value or ""
 			if isinstance(values, frappe.string_types):
 				values = values.split(",")
@@ -685,7 +695,7 @@ class DatabaseQuery(object):
 		):
 			only_if_shared = True
 			if not self.shared:
-				frappe.throw(_("No permission to read {0}").format(self.doctype), frappe.PermissionError)
+				frappe.throw(_("No permission to read {0}").format(_(self.doctype)), frappe.PermissionError)
 			else:
 				self.conditions.append(self.get_share_condition())
 
@@ -853,7 +863,7 @@ class DatabaseQuery(object):
 					)
 
 				# draft docs always on top
-				if hasattr(meta, 'is_submittable') and meta.is_submittable:
+				if hasattr(meta, "is_submittable") and meta.is_submittable:
 					args.order_by = "`tab{0}`.docstatus asc, {1}".format(self.doctype, args.order_by)
 
 	def validate_order_by_and_group_by(self, parameters):
@@ -865,7 +875,7 @@ class DatabaseQuery(object):
 		if "select" in _lower and "from" in _lower:
 			frappe.throw(_("Cannot use sub-query in order by"))
 
-		if re.compile(r".*[^a-z0-9-_ ,`'\"\.\(\)].*").match(_lower):
+		if ORDER_GROUP_PATTERN.match(_lower):
 			frappe.throw(_("Illegal SQL Query"))
 
 		for field in parameters.split(","):

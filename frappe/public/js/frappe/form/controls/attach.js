@@ -67,6 +67,7 @@ frappe.ui.form.ControlAttach = frappe.ui.form.ControlData.extend({
 			options.doctype = this.frm.doctype;
 			options.docname = this.frm.docname;
 			options.fieldname = this.df.fieldname;
+			options.make_attachments_public = this.frm.meta.make_attachments_public;
 		}
 
 		if (this.df.options) {
@@ -76,8 +77,9 @@ frappe.ui.form.ControlAttach = frappe.ui.form.ControlData.extend({
 	},
 
 	set_input: function(value, dataurl) {
+		this.last_value = this.value;
 		this.value = value;
-		if(this.value) {
+		if (this.value) {
 			this.$input.toggle(false);
 			// value can also be using this format: FILENAME,DATA_URL
 			// Important: We have to be careful because normal filenames may also contain ","

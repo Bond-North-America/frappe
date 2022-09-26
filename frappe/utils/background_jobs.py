@@ -19,18 +19,10 @@ import frappe.monitor
 from frappe import _
 from frappe.utils import cstr
 
-common_site_config = frappe.get_file_json("common_site_config.json")
-custom_workers_config = common_site_config.get("workers", {})
-default_timeout = 300
-queue_timeout = {
-	"default": default_timeout,
-	"short": default_timeout,
-	"long": 1500,
-	**{
-		worker: config.get("timeout", default_timeout)
-		for worker, config in custom_workers_config.items()
-	}
-}
+# TTL to keep RQ job logs in redis for.
+RQ_JOB_FAILURE_TTL = 7 * 24 * 60 * 60  # 7 days instead of 1 year (default)
+RQ_RESULTS_TTL = 10 * 60
+
 
 @lru_cache()
 def get_queues_timeout():
@@ -101,8 +93,14 @@ def enqueue(
 			{"queue": queue, "is_async": is_async, "timeout": timeout, "queue_args": queue_args}
 		)
 		return frappe.flags.enqueue_after_commit
-	else:
-		return q.enqueue_call(execute_job, timeout=timeout, kwargs=queue_args)
+
+	return q.enqueue_call(
+		execute_job,
+		timeout=timeout,
+		kwargs=queue_args,
+		failure_ttl=RQ_JOB_FAILURE_TTL,
+		result_ttl=RQ_RESULTS_TTL,
+	)
 
 
 def enqueue_doc(
@@ -165,7 +163,7 @@ def execute_job(site, method, event, job_name, kwargs, user=None, is_async=True,
 			frappe.log_error(title=method_name)
 			raise
 
-	except:
+	except Exception:
 		frappe.db.rollback()
 		frappe.log_error(title=method_name)
 		frappe.db.commit()
@@ -312,3 +310,4 @@ def test_job(s):
 
 	print("sleeping...")
 	time.sleep(s)
+

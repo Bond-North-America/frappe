@@ -84,6 +84,8 @@ class EmailAccount(Document):
 		# if self.enable_incoming and not self.append_to:
 		# 	frappe.throw(_("Append To is mandatory for incoming mails"))
 
+		self.use_starttls = cint(self.use_imap and self.use_starttls and not self.use_ssl)
+
 		if (
 			not self.awaiting_password
 			and not frappe.local.flags.in_install
@@ -168,6 +170,7 @@ class EmailAccount(Document):
 				"use_imap",
 				"email_server",
 				"use_ssl",
+				"use_starttls",
 				"smtp_server",
 				"use_tls",
 				"smtp_port",
@@ -207,6 +210,7 @@ class EmailAccount(Document):
 				"email_account": self.name,
 				"host": self.email_server,
 				"use_ssl": self.use_ssl,
+				"use_starttls": self.use_starttls,
 				"username": getattr(self, "login_id", None) or self.email_id,
 				"use_imap": self.use_imap,
 				"email_sync_rule": email_sync_rule,
@@ -820,6 +824,12 @@ class EmailAccount(Document):
 				frappe.throw(_("Automatic Linking can be activated only for one Email Account."))
 
 	def append_email_to_sent_folder(self, message):
+		if not (self.enable_incoming and self.use_imap):
+			# don't try appending if enable incoming and imap is not set
+			# as email domain's updation can cause email account(s) to forcibly
+			# update their settings.
+			return
+
 		email_server = None
 		try:
 			email_server = self.get_incoming_server(in_receive=True)
