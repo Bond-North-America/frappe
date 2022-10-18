@@ -511,11 +511,7 @@ def save_exception(msg, exc=ValidationError, title=None, is_minimizable=None, wi
 		if(site_config and site_config.get("log_errors") == 1
 			and db.exists("DocType", "Error Log")):
 			_traceback = get_traceback()
-			get_doc({
-				"doctype": "Error Log",
-				"method": title or _("Error"),
-				"error": _traceback,
-			}).insert(ignore_permissions=True)
+			log_error(_traceback, title or _("Error"))
 		raise e
 
 def emit_js(js, user=False, **kwargs):
@@ -2043,11 +2039,18 @@ def log_error(message=None, title=_("Error")):
 			error = message
 	else:
 		error = get_traceback()
+	try:
+		enqueue(_log_error, queue="short", error=error, title=title)
+	except Exception as e:
+		pass
 
-	return get_doc(dict(doctype="Error Log", error=as_unicode(error), method=title)).insert(
+'''
+	Logging
+'''
+def _log_error(error, title):
+	get_doc(dict(doctype="Error Log", error=as_unicode(error), method=title)).insert(
 		ignore_permissions=True
 	)
-
 
 def get_desk_link(doctype, name):
 	html = (
