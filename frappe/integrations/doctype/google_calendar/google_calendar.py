@@ -215,20 +215,33 @@ def check_google_calendar(account, google_calendar):
 	If not, creates one.
 	"""
 	account.load_from_db()
+	email_id = frappe.db.get_value("User", account.user, "email")
 	try:
 		if account.google_calendar_id:
 			google_calendar.calendars().get(calendarId=account.google_calendar_id).execute()
 		else:
-			# If no Calendar ID create a new Calendar
-			calendar = {
-				"summary": account.calendar_name,
-				"timeZone": frappe.db.get_single_value("System Settings", "time_zone"),
-			}
-			created_calendar = google_calendar.calendars().insert(body=calendar).execute()
-			frappe.db.set_value(
-				"Google Calendar", account.name, "google_calendar_id", created_calendar.get("id")
-			)
-			frappe.db.commit()
+			existing_calendars = google_calendar.calendarList().list().execute()
+			if(existing_calendars and existing_calendars.get("items")):
+				for c in existing_calendars.get("items"):
+					if(c.get("summary") == email_id and account.use_primary_calendar):
+						frappe.db.set_value("Google Calendar", account.name, "google_calendar_id", c.get("id"))
+						frappe.db.commit()
+						break
+					elif(c.get("summary") == account.calendar_name):
+						frappe.db.set_value("Google Calendar", account.name, "google_calendar_id", c.get("id"))
+						frappe.db.commit()
+						break
+			else:
+				# If no Calendar ID create a new Calendar
+				calendar = {
+					"summary": account.calendar_name,
+					"timeZone": frappe.db.get_single_value("System Settings", "time_zone"),
+				}
+				created_calendar = google_calendar.calendars().insert(body=calendar).execute()
+				frappe.db.set_value(
+					"Google Calendar", account.name, "google_calendar_id", created_calendar.get("id")
+				)
+				frappe.db.commit()
 	except HttpError as err:
 		frappe.throw(
 			_("Google Calendar - Could not create Calendar for {0}, error code {1}.").format(
@@ -290,52 +303,55 @@ def sync_events_from_google_calendar(g_calendar, method=None):
 			break
 
 	for idx, event in enumerate(results):
-		frappe.publish_realtime(
-			"import_google_calendar", dict(progress=idx + 1, total=len(results)), user=frappe.session.user
-		)
-
-		# If Google Calendar Event if confirmed, then create an Event
-		if event.get("status") == "confirmed":
-			recurrence = None
-			if event.get("recurrence"):
-				try:
-					recurrence = event.get("recurrence")[0]
-				except IndexError:
-					pass
-
-			if not frappe.db.exists("Event", {"google_calendar_event_id": event.get("id")}):
-				insert_event_to_calendar(account, event, recurrence)
-			else:
-				update_event_in_calendar(account, event, recurrence)
-		elif event.get("status") == "cancelled":
-			# If any synced Google Calendar Event is cancelled, then close the Event
-			frappe.db.set_value(
-				"Event",
-				{
-					"google_calendar_id": account.google_calendar_id,
-					"google_calendar_event_id": event.get("id"),
-				},
-				"status",
-				"Closed",
+		try:
+			frappe.publish_realtime(
+				"import_google_calendar", dict(progress=idx + 1, total=len(results)), user=frappe.session.user
 			)
-			frappe.get_doc(
-				{
-					"doctype": "Comment",
-					"comment_type": "Info",
-					"reference_doctype": "Event",
-					"reference_name": frappe.db.get_value(
-						"Event",
-						{
-							"google_calendar_id": account.google_calendar_id,
-							"google_calendar_event_id": event.get("id"),
-						},
-						"name",
-					),
-					"content": " - Event deleted from Google Calendar.",
-				}
-			).insert(ignore_permissions=True)
-		else:
-			pass
+
+			# If Google Calendar Event if confirmed, then create an Event
+			if event.get("status") == "confirmed":
+				recurrence = None
+				if event.get("recurrence"):
+					try:
+						recurrence = event.get("recurrence")[0]
+					except IndexError:
+						pass
+
+				if not frappe.db.exists("Event", {"google_calendar_event_id": event.get("id")}):
+					insert_event_to_calendar(account, event, recurrence)
+				else:
+					update_event_in_calendar(account, event, recurrence)
+			elif event.get("status") == "cancelled":
+				# If any synced Google Calendar Event is cancelled, then close the Event
+				frappe.db.set_value(
+					"Event",
+					{
+						"google_calendar_id": account.google_calendar_id,
+						"google_calendar_event_id": event.get("id"),
+					},
+					"status",
+					"Closed",
+				)
+				frappe.get_doc(
+					{
+						"doctype": "Comment",
+						"comment_type": "Info",
+						"reference_doctype": "Event",
+						"reference_name": frappe.db.get_value(
+							"Event",
+							{
+								"google_calendar_id": account.google_calendar_id,
+								"google_calendar_event_id": event.get("id"),
+							},
+							"name",
+						),
+						"content": " - Event deleted from Google Calendar.",
+					}
+				).insert(ignore_permissions=True)
+			else:
+				pass
+		except Exception as e:
+			frappe.log_error(frappe.get_traceback(), "Calendar Sync Error for event %s"%(event.get("summary")))
 
 	if not results:
 		return _("No Google Calendar Event to sync.")
