@@ -22,7 +22,7 @@ from frappe.email.oauth import Oauth
 from frappe.utils import (
 	add_days,
 	cint,
-	convert_utc_to_user_timezone,
+	convert_utc_to_system_timezone,
 	cstr,
 	extract_email_id,
 	get_datetime,
@@ -460,7 +460,7 @@ class Email:
 			try:
 				utc = email.utils.mktime_tz(email.utils.parsedate_tz(self.mail["Date"]))
 				utc_dt = datetime.datetime.utcfromtimestamp(utc)
-				self.date = convert_utc_to_user_timezone(utc_dt).strftime("%Y-%m-%d %H:%M:%S")
+				self.date = convert_utc_to_system_timezone(utc_dt).strftime("%Y-%m-%d %H:%M:%S")
 			except Exception:
 				self.date = now()
 		else:
@@ -781,7 +781,7 @@ class InboundMail(Email):
 
 		Here are the cases to handle:
 		1. If mail is a reply to already sent mail, then we can get parent communicaion from
-		        Email Queue record.
+		        Email Queue record or message_id on communication.
 		2. Sometimes we send communication name in message-ID directly, use that to get parent communication.
 		3. Sender sent a reply but reply is on top of what (s)he sent before,
 		        then parent record exists directly in communication.
@@ -794,17 +794,15 @@ class InboundMail(Email):
 		if not self.is_reply():
 			return ""
 
-		if not self.is_reply_to_system_sent_mail():
-			communication = Communication.find_one_by_filters(
-				message_id=self.in_reply_to, creation=[">=", self.get_relative_dt(-30)]
-			)
-		elif self.parent_email_queue() and self.parent_email_queue().communication:
-			communication = Communication.find(self.parent_email_queue().communication, ignore_error=True)
-		else:
-			reference = self.in_reply_to
-			if "@" in self.in_reply_to:
-				reference, _ = self.in_reply_to.split("@", 1)
-			communication = Communication.find(reference, ignore_error=True)
+		communication = Communication.find_one_by_filters(message_id=self.in_reply_to)
+		if not communication:
+			if self.parent_email_queue() and self.parent_email_queue().communication:
+				communication = Communication.find(self.parent_email_queue().communication, ignore_error=True)
+			else:
+				reference = self.in_reply_to
+				if "@" in self.in_reply_to:
+					reference, _ = self.in_reply_to.split("@", 1)
+				communication = Communication.find(reference, ignore_error=True)
 
 		self._parent_communication = communication or ""
 		return self._parent_communication
