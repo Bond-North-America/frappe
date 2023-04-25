@@ -673,8 +673,10 @@ def sendmail(
 
 	if not delayed:
 		now = True
-
-	from frappe.email.doctype.email_queue.email_queue import QueueBuilder
+	try:
+		from bond_email.document_controllers.email_queue import BondQueueBuilder as QueueBuilder
+	except Exception as e:
+		from frappe.email.doctype.email_queue.email_queue import QueueBuilder
 
 	builder = QueueBuilder(
 		recipients=recipients,
