@@ -141,7 +141,7 @@ def authorize_access(g_calendar, reauthorize=None):
 
 			frappe.local.response["type"] = "redirect"
 			frappe.local.response["location"] = "/app/Form/{}/{}".format(
-				quote("Google Calendar"), quote(google_calendar.name)
+				quote("Google Suite Settings"), quote(google_calendar.user)
 			)
 
 			frappe.msgprint(_("Google Calendar has been configured."))
