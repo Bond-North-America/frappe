@@ -39,7 +39,7 @@ def get(args=None):
 
 
 @frappe.whitelist()
-def add(args=None):
+def add(args=None, write_perm=0, share_perm=0):
 	"""add in someone's to do list
 	args = {
 	        "assign_to": [],
@@ -102,7 +102,7 @@ def add(args=None):
 					)
 					frappe.throw(msg, title=_("Missing Permission"))
 				else:
-					frappe.share.add(doc.doctype, doc.name, assign_to)
+					frappe.share.add_docshare(doc.doctype, doc.name, assign_to, write=write_perm, share=share_perm, flags={"ignore_share_permission": True})
 					shared_with_users.append(assign_to)
 
 			# make this document followed by assigned user
