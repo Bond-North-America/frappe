@@ -39,7 +39,7 @@ def get(args=None):
 
 
 @frappe.whitelist()
-def add(args=None, write_perm=0, share_perm=0):
+def add(args=None, write_perm=0, share_perm=0, notify_user=True):
 	"""add in someone's to do list
 	args = {
 	        "assign_to": [],
@@ -109,15 +109,16 @@ def add(args=None, write_perm=0, share_perm=0):
 			if frappe.get_cached_value("User", assign_to, "follow_assigned_documents"):
 				follow_document(args["doctype"], args["name"], assign_to)
 
-			# notify
-			notify_assignment(
-				d.assigned_by,
-				d.allocated_to,
-				d.reference_type,
-				d.reference_name,
-				action="ASSIGN",
-				description=args.get("description"),
-			)
+			if(notify_user):
+				# notify
+				notify_assignment(
+					d.assigned_by,
+					d.allocated_to,
+					d.reference_type,
+					d.reference_name,
+					action="ASSIGN",
+					description=args.get("description"),
+				)
 
 	if shared_with_users:
 		user_list = format_message_for_assign_to(shared_with_users)
