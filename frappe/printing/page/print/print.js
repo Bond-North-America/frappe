@@ -394,6 +394,7 @@ frappe.ui.form.PrintView = class {
 	}
 
 	preview() {
+		console.log("navdeep here");
 		let print_format = this.get_print_format();
 		if (print_format.print_format_builder_beta) {
 			this.print_wrapper.find(".print-preview-wrapper").hide();
