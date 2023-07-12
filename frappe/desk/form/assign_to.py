@@ -122,9 +122,10 @@ def add(args=None, write_perm=0, share_perm=0, notify_user=True):
 
 	if shared_with_users:
 		user_list = format_message_for_assign_to(shared_with_users)
-		frappe.msgprint(
-			_("Shared with the following Users with Read access:{0}").format(user_list, alert=True)
-		)
+
+		#frappe.msgprint(
+		#	_("Shared with the following Users with Read access:{0}").format(user_list, alert=True)
+		#)
 
 	if users_with_duplicate_todo:
 		user_list = format_message_for_assign_to(users_with_duplicate_todo)
