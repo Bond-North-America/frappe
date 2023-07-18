@@ -261,7 +261,7 @@ def apply(doc=None, method=None, doctype=None, name=None):
 				continue
 
 			new_apply = assignment_rule.apply_assign(doc)
-			if new_apply:
+			if new_apply and not assignment_rule.disable_clear_previous_assignment:
 				break
 
 	# apply close rule only if assignments exists
