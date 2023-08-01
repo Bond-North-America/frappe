@@ -44,7 +44,7 @@ from .utils.jinja import (
 )
 from .utils.lazy_loader import lazy_import
 
-__version__ = "14.41.0"
+__version__ = "14.42.0"
 __title__ = "Frappe Framework"
 
 controllers = {}
@@ -57,7 +57,7 @@ re._MAXCACHE = (
 	50  # reduced from default 512 given we are already maintaining this on parent worker
 )
 
-_tune_gc = bool(os.environ.get("FRAPPE_TUNE_GC", False))
+_tune_gc = bool(sbool(os.environ.get("FRAPPE_TUNE_GC", True)))
 
 if _dev_server:
 	warnings.simplefilter("always", DeprecationWarning)
