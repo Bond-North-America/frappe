@@ -25,7 +25,7 @@ import click
 from werkzeug.local import Local, release_local
 
 from frappe.query_builder import (
-	get_qb_engine,
+	get_query,
 	get_query_builder,
 	patch_query_aggregation,
 	patch_query_execute,
@@ -44,7 +44,7 @@ from .utils.jinja import (
 )
 from .utils.lazy_loader import lazy_import
 
-__version__ = "14.42.0"
+__version__ = "14.46.0"
 __title__ = "Frappe Framework"
 
 controllers = {}
@@ -247,7 +247,8 @@ def init(site: str, sites_path: str = ".", new_site: bool = False, force=False) 
 	local.session = _dict()
 	local.dev_server = _dev_server
 	local.qb = get_query_builder(local.conf.db_type or "mariadb")
-	local.qb.engine = get_qb_engine()
+	local.qb.get_query = get_query
+	local.qb.engine = _dict(get_query=get_query)  # for backward compatiblity
 	setup_module_map()
 
 	if not _qb_patched.get(local.conf.db_type):
@@ -969,7 +970,9 @@ def has_permission(
 
 	if throw and not out:
 		# mimics frappe.throw
-		document_label = f"{_(doc.doctype)} {doc.name}" if doc else _(doctype)
+		document_label = (
+			f"{_(doctype)} {doc if isinstance(doc, str) else doc.name}" if doc else _(doctype)
+		)
 		msgprint(
 			_("No permission for {0}").format(document_label),
 			raise_exception=ValidationError,
@@ -2276,27 +2279,11 @@ def bold(text):
 
 def safe_eval(code, eval_globals=None, eval_locals=None):
 	"""A safer `eval`"""
+
+	from frappe.utils.safe_exec import UNSAFE_ATTRIBUTES
+
 	whitelisted_globals = {"int": int, "float": float, "long": int, "round": round}
 	code = unicodedata.normalize("NFKC", code)
-
-	UNSAFE_ATTRIBUTES = {
-		# Generator Attributes
-		"gi_frame",
-		"gi_code",
-		# Coroutine Attributes
-		"cr_frame",
-		"cr_code",
-		"cr_origin",
-		# Async Generator Attributes
-		"ag_code",
-		"ag_frame",
-		# Traceback Attributes
-		"tb_frame",
-		"tb_next",
-		# Format Attributes
-		"format",
-		"format_map",
-	}
 
 	for attribute in UNSAFE_ATTRIBUTES:
 		if attribute in code:
