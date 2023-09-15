@@ -33,7 +33,7 @@ from frappe.model.meta import Meta
 from frappe.modules import get_doc_path, make_boilerplate
 from frappe.modules.import_file import get_file_path
 from frappe.query_builder.functions import Concat
-from frappe.utils import cint, random_string
+from frappe.utils import cint, is_a_property, random_string
 from frappe.website.utils import clear_cache
 
 if TYPE_CHECKING:
@@ -154,9 +154,7 @@ class DocType(Document):
 			controller = Document
 
 		available_objects = {x for x in dir(controller) if isinstance(x, str)}
-		property_set = {
-			x for x in available_objects if isinstance(getattr(controller, x, None), property)
-		}
+		property_set = {x for x in available_objects if is_a_property(getattr(controller, x, None))}
 		method_set = {
 			x for x in available_objects if x not in property_set and callable(getattr(controller, x, None))
 		}
@@ -1490,6 +1488,7 @@ def get_fields_not_allowed_in_list_view(meta) -> list[str]:
 	not_allowed_in_list_view.append("Attach Image")
 	if meta.istable:
 		not_allowed_in_list_view.remove("Button")
+		not_allowed_in_list_view.remove("HTML")
 	return not_allowed_in_list_view
 
 
@@ -1696,9 +1695,7 @@ def check_fieldname_conflicts(docfield):
 	"""Checks if fieldname conflicts with methods or properties"""
 	doc = frappe.get_doc({"doctype": docfield.dt})
 	available_objects = [x for x in dir(doc) if isinstance(x, str)]
-	property_list = [
-		x for x in available_objects if isinstance(getattr(type(doc), x, None), property)
-	]
+	property_list = [x for x in available_objects if is_a_property(getattr(type(doc), x, None))]
 	method_list = [
 		x for x in available_objects if x not in property_list and callable(getattr(doc, x))
 	]

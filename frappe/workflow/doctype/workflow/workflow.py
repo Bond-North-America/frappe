@@ -17,7 +17,6 @@ class Workflow(Document):
 	def on_update(self):
 		self.update_doc_status()
 		frappe.clear_cache(doctype=self.document_type)
-		frappe.cache().delete_key("workflow_" + self.name)  # clear cache created in model/workflow.py
 
 	def create_custom_field_for_workflow_state(self):
 		frappe.clear_cache(doctype=self.document_type)
@@ -136,10 +135,12 @@ def get_fieldnames_for(doctype):
 def get_workflow_state_count(doctype, workflow_state_field, states):
 	frappe.has_permission(doctype=doctype, ptype="read", throw=True)
 	states = frappe.parse_json(states)
-	result = frappe.get_all(
-		doctype,
-		fields=[workflow_state_field, "count(*) as count"],
-		filters={workflow_state_field: ["not in", states]},
-		group_by=workflow_state_field,
-	)
-	return [r for r in result if r[workflow_state_field]]
+
+	if workflow_state_field in frappe.get_meta(doctype).get_valid_columns():
+		result = frappe.get_all(
+			doctype,
+			fields=[workflow_state_field, "count(*) as count"],
+			filters={workflow_state_field: ["not in", states]},
+			group_by=workflow_state_field,
+		)
+		return [r for r in result if r[workflow_state_field]]

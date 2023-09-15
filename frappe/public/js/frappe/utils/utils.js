@@ -956,11 +956,11 @@ Object.assign(frappe.utils, {
 			return "";
 		} else if (values.length > 0) {
 			if (column.column.fieldtype == "Percent" || type === "mean") {
-				return values.reduce((a, b) => a + flt(b)) / values.length;
+				return values.reduce((a, b) => flt(a) + flt(b)) / values.length;
 			} else if (column.column.fieldtype == "Int") {
-				return values.reduce((a, b) => a + cint(b));
+				return values.reduce((a, b) => cint(a) + cint(b));
 			} else if (frappe.model.is_numeric_field(column.column.fieldtype)) {
-				return values.reduce((a, b) => a + flt(b));
+				return values.reduce((a, b) => flt(a) + flt(b));
 			} else {
 				return null;
 			}
@@ -1295,6 +1295,9 @@ Object.assign(frappe.utils, {
 							break;
 						case "Kanban":
 							route = `${doctype_slug}/view/kanban`;
+							if (item.kanban_board) {
+								route += `/${item.kanban_board}`;
+							}
 							break;
 						default:
 							route = doctype_slug;

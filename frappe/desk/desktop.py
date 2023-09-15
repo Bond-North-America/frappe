@@ -72,9 +72,7 @@ class Workspace:
 		"""Returns true if Has Role is not set or the user is allowed."""
 		from frappe.utils import has_common
 
-		allowed = [
-			d.role for d in frappe.get_all("Has Role", fields=["role"], filters={"parent": self.doc.name})
-		]
+		allowed = [d.role for d in self.doc.roles]
 
 		custom_roles = get_custom_allowed_roles("page", self.doc.name)
 		allowed.extend(custom_roles)
@@ -455,7 +453,7 @@ def get_workspace_sidebar_items():
 		try:
 			workspace = Workspace(page, True)
 			if has_access or workspace.is_permitted():
-				if page.public and (has_access or not page.is_hidden):
+				if page.public and (has_access or not page.is_hidden) and page.title != "Welcome Workspace":
 					pages.append(page)
 				elif page.for_user == frappe.session.user:
 					private_pages.append(page)
@@ -464,6 +462,10 @@ def get_workspace_sidebar_items():
 			pass
 	if private_pages:
 		pages.extend(private_pages)
+
+	if len(pages) == 0:
+		pages = [frappe.get_doc("Workspace", "Welcome Workspace").as_dict()]
+		pages[0]["label"] = _("Welcome Workspace")
 
 	return {"pages": pages, "has_access": has_access}
 
