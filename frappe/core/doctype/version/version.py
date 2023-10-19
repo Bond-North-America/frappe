@@ -120,6 +120,9 @@ def get_diff(old, new, for_child=False):
 				new_value = new.get_formatted(df.fieldname) if new_value else new_value
 
 			if old_value != new_value:
+				from bond_assets.utils.data import set_user_date_format_for_version
+				if(df.fieldtype in ["Date", "Datetime"]):
+					old_value, new_value  = set_user_date_format_for_version(old_value, new_value, df)
 				out.changed.append((df.fieldname, old_value, new_value))
 
 	# name & docstatus
