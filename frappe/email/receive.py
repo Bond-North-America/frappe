@@ -8,6 +8,7 @@ import imaplib
 import json
 import poplib
 import re
+import ssl
 import time
 from email.header import decode_header
 
@@ -93,7 +94,10 @@ class EmailServer:
 		try:
 			if cint(self.settings.use_ssl):
 				self.imap = Timed_IMAP4_SSL(
-					self.settings.host, self.settings.incoming_port, timeout=frappe.conf.get("pop_timeout")
+					self.settings.host,
+					self.settings.incoming_port,
+					timeout=frappe.conf.get("pop_timeout"),
+					ssl_context=ssl.create_default_context(),
 				)
 			else:
 				self.imap = Timed_IMAP4(
@@ -127,7 +131,10 @@ class EmailServer:
 		try:
 			if cint(self.settings.use_ssl):
 				self.pop = Timed_POP3_SSL(
-					self.settings.host, self.settings.incoming_port, timeout=frappe.conf.get("pop_timeout")
+					self.settings.host,
+					self.settings.incoming_port,
+					timeout=frappe.conf.get("pop_timeout"),
+					context=ssl.create_default_context(),
 				)
 			else:
 				self.pop = Timed_POP3(
@@ -270,6 +277,9 @@ class EmailServer:
 			).where(Communication.email_account == self.settings.email_account).run()
 
 			if self.settings.use_imap:
+				# Remove {"} quotes that are added to handle spaces in IMAP Folder names
+				if folder[0] == folder[-1] == '"':
+					folder = folder[1:-2]
 				# new update for the IMAP Folder DocType
 				IMAPFolder = frappe.qb.DocType("IMAP Folder")
 				frappe.qb.update(IMAPFolder).set(IMAPFolder.uidvalidity, current_uid_validity).set(
@@ -282,11 +292,6 @@ class EmailServer:
 				frappe.qb.update(EmailAccount).set(EmailAccount.uidvalidity, current_uid_validity).set(
 					EmailAccount.uidnext, uidnext
 				).where(EmailAccount.name == self.settings.email_account_name).run()
-
-			# uid validity not found pulling emails for first time
-			if not uid_validity:
-				self.settings.email_sync_rule = "UNSEEN"
-				return
 
 			sync_count = 100 if uid_validity else int(self.settings.initial_sync_count)
 			from_uid = (

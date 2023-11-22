@@ -162,7 +162,6 @@ def flush(from_test=False):
 				frappe.enqueue(
 					method=send_mail,
 					email_queue_name=row.name,
-					is_background_task=not from_test,
 					now=from_test,
 					job_name=job_name,
 					queue="short",
@@ -174,8 +173,10 @@ def flush(from_test=False):
 
 
 def get_queue():
+	batch_size = cint(frappe.conf.email_queue_batch_size) or 500
+
 	return frappe.db.sql(
-		"""select
+		f"""select
 			name, sender
 		from
 			`tabEmail Queue`
@@ -183,8 +184,8 @@ def get_queue():
 			(status='Not Sent' or status='Partially Sent') and
 			(send_after is null or send_after < %(now)s)
 		order
-			by priority desc, creation asc
-		limit 500""",
+			by priority desc, retry asc, creation asc
+		limit {batch_size}""",
 		{"now": now_datetime()},
 		as_dict=True,
 	)

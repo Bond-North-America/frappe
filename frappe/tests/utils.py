@@ -6,9 +6,12 @@ from contextlib import contextmanager
 from typing import Sequence
 from unittest.mock import patch
 
+import pytz
+
 import frappe
 from frappe.model.base_document import BaseDocument
 from frappe.utils import cint
+from frappe.utils.data import convert_utc_to_timezone, get_datetime, get_system_timezone
 
 datetime_like_types = (datetime.datetime, datetime.date, datetime.time, datetime.timedelta)
 
@@ -75,6 +78,23 @@ class FrappeTestCase(unittest.TestCase):
 		else:
 			self.assertEqual(expected, actual, msg=msg)
 
+	def normalize_html(self, code: str) -> str:
+		"""Formats HTML consistently so simple string comparisons can work on them."""
+		from bs4 import BeautifulSoup
+
+		return BeautifulSoup(code, "html.parser").prettify(formatter=None)
+
+	def normalize_sql(self, query: str) -> str:
+		"""Formats SQL consistently so simple string comparisons can work on them."""
+		import sqlparse
+
+		return (
+			sqlparse.format(query.strip(), keyword_case="upper", reindent=True, strip_comments=True),
+		)
+
+	def assertQueryEqual(self, first: str, second: str):
+		self.assertEqual(self.normalize_sql(first), self.normalize_sql(second))
+
 	@contextmanager
 	def assertQueryCount(self, count):
 		queries = []
@@ -111,6 +131,40 @@ class FrappeTestCase(unittest.TestCase):
 			self.assertLessEqual(rows_read, count, msg="Queries read more rows than expected")
 		finally:
 			frappe.db.sql = orig_sql
+
+	@contextmanager
+	def set_user(self, user: str):
+		try:
+			old_user = frappe.session.user
+			frappe.set_user(user)
+			yield
+		finally:
+			frappe.set_user(old_user)
+
+	@contextmanager
+	def switch_site(self, site: str):
+		"""Switch connection to different site.
+		Note: Drops current site connection completely."""
+
+		try:
+			old_site = frappe.local.site
+			frappe.init(site, force=True)
+			frappe.connect()
+			yield
+		finally:
+			frappe.init(old_site, force=True)
+			frappe.connect()
+
+	@contextmanager
+	def freeze_time(self, time_to_freeze, *args, **kwargs):
+		from freezegun import freeze_time
+
+		# Freeze time expects UTC or tzaware objects. We have neither, so convert to UTC.
+		timezone = pytz.timezone(get_system_timezone())
+		fake_time_with_tz = timezone.localize(get_datetime(time_to_freeze)).astimezone(pytz.utc)
+
+		with freeze_time(fake_time_with_tz, *args, **kwargs):
+			yield
 
 
 def _commit_watcher():

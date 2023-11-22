@@ -63,6 +63,8 @@ def add(args=None, write_perm=0, share_perm=0, notify_user=True):
 			"status": "Open",
 			"allocated_to": assign_to,
 		}
+		if not ignore_permissions:
+			frappe.get_doc(args["doctype"], args["name"]).check_permission()
 
 		if frappe.get_all("ToDo", filters=filters):
 			users_with_duplicate_todo.append(assign_to)
@@ -146,7 +148,7 @@ def add_multiple(args=None):
 		add(args)
 
 
-def close_all_assignments(doctype, name):
+def close_all_assignments(doctype, name, ignore_permissions=False):
 	assignments = frappe.get_all(
 		"ToDo",
 		fields=["allocated_to", "name"],
@@ -156,26 +158,42 @@ def close_all_assignments(doctype, name):
 		return False
 
 	for assign_to in assignments:
-		set_status(doctype, name, todo=assign_to.name, assign_to=assign_to.allocated_to, status="Closed")
+		set_status(
+			doctype,
+			name,
+			todo=assign_to.name,
+			assign_to=assign_to.allocated_to,
+			status="Closed",
+			ignore_permissions=ignore_permissions,
+		)
 
 	return True
 
 
 @frappe.whitelist()
-def remove(doctype, name, assign_to):
-	return set_status(doctype, name, "", assign_to, status="Cancelled")
+def remove(doctype, name, assign_to, ignore_permissions=False):
+	return set_status(
+		doctype, name, "", assign_to, status="Cancelled", ignore_permissions=ignore_permissions
+	)
 
 
 @frappe.whitelist()
-def close(doctype: str, name: str, assign_to: str):
+def close(doctype: str, name: str, assign_to: str, ignore_permissions=False):
 	if assign_to != frappe.session.user:
 		frappe.throw(_("Only the assignee can complete this to-do."))
 
-	return set_status(doctype, name, "", assign_to, status="Closed")
+	return set_status(
+		doctype, name, "", assign_to, status="Closed", ignore_permissions=ignore_permissions
+	)
 
 
-def set_status(doctype, name, todo=None, assign_to=None, status="Cancelled"):
+def set_status(
+	doctype, name, todo=None, assign_to=None, status="Cancelled", ignore_permissions=False
+):
 	"""remove from todo"""
+
+	if not ignore_permissions:
+		frappe.get_doc(doctype, name).check_permission()
 	try:
 		if not todo:
 			todo = frappe.db.get_value(
@@ -203,7 +221,7 @@ def set_status(doctype, name, todo=None, assign_to=None, status="Cancelled"):
 	return get({"doctype": doctype, "name": name})
 
 
-def clear(doctype, name):
+def clear(doctype, name, ignore_permissions=False):
 	"""
 	Clears assignments, return False if not assigned.
 	"""
@@ -217,7 +235,12 @@ def clear(doctype, name):
 
 	for assign_to in assignments:
 		set_status(
-			doctype, name, todo=assign_to.name, assign_to=assign_to.allocated_to, status="Cancelled"
+			doctype,
+			name,
+			todo=assign_to.name,
+			assign_to=assign_to.allocated_to,
+			status="Cancelled",
+			ignore_permissions=ignore_permissions,
 		)
 
 	return True
