@@ -1,5 +1,4 @@
 @import "../common/form.scss";
-@import "~cropperjs/dist/cropper.min";
 
 .std-form-layout > .form-layout > .form-page {
 	border-radius: var(--border-radius-md);
@@ -24,7 +23,7 @@
 		padding: var(--padding-sm) var(--padding-md);
 		margin: 0;
 		margin-bottom: var(--margin-sm);
-		cursor: pointer;
+		cursor: default;
 
 		.collapse-indicator {
 			color: var(--text-muted);
@@ -32,6 +31,10 @@
 			position: relative;
 			padding: 0px;
 		}
+	}
+
+	.section-head.collapsible {
+		cursor: pointer;
 	}
 
 	.section-head.collapsed {
