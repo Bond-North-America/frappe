@@ -39,7 +39,7 @@ def get(args=None):
 
 
 @frappe.whitelist()
-def add(args=None, write_perm=0, share_perm=0, notify_user=True):
+def add(args=None, write_perm=0, share_perm=0, notify_user=True, ignore_permissions=False):
 	"""add in someone's to do list
 	args = {
 	        "assign_to": [],
