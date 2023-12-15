@@ -93,6 +93,7 @@ frappe.ui.form.on("Contact", {
 		}
 	},
 	after_save: function (frm) {
+		/*
 		frappe.run_serially([
 			() => frappe.timeout(1),
 			() => {
@@ -114,6 +115,7 @@ frappe.ui.form.on("Contact", {
 				}
 			},
 		]);
+		*/
 	},
 	sync_with_google_contacts: function (frm) {
 		if (frm.doc.sync_with_google_contacts) {
