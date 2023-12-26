@@ -584,7 +584,7 @@ class Document(BaseDocument):
 
 	def validate_workflow(self):
 		"""Validate if the workflow transition is valid"""
-		if frappe.flags.in_install == "frappe":
+		if frappe.flags.in_install == "frappe" or self.flags.ignore_workspace_transition:
 			return
 		workflow = self.meta.get_workflow()
 		if workflow:
