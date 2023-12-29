@@ -76,7 +76,6 @@ def enqueue_create_notification(users: list[str] | str, doc: dict):
 		now=frappe.flags.in_test,
 	)
 
-
 def make_notification_logs(doc, users):
 	for user in _get_user_ids(users):
 		notification = frappe.new_doc("Notification Log")
@@ -84,8 +83,7 @@ def make_notification_logs(doc, users):
 		notification.for_user = user
 		if (
 			notification.for_user != notification.from_user
-			or doc.type == "Energy Point"
-			or doc.type == "Alert"
+			or doc.type in ["Energy Point", "Alert", "Assignment"]
 		):
 			notification.insert(ignore_permissions=True)
 
