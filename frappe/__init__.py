@@ -44,7 +44,7 @@ from .utils.jinja import (
 )
 from .utils.lazy_loader import lazy_import
 
-__version__ = "14.62.1"
+__version__ = "14.64.0"
 __title__ = "Frappe Framework"
 
 controllers = {}
@@ -975,19 +975,11 @@ def has_permission(
 	)
 
 	if throw and not out:
-		# mimics frappe.throw
 		document_label = (
 			f"{_(doctype)} {doc if isinstance(doc, str) else doc.name}" if doc else _(doctype)
 		)
-		msgprint(
-			_("No permission for {0}").format(document_label),
-			raise_exception=ValidationError,
-			title=None,
-			indicator="red",
-			is_minimizable=None,
-			wide=None,
-			as_list=False,
-		)
+		frappe.flags.error_message = _("No permission for {0}").format(document_label)
+		raise frappe.PermissionError
 
 	return out
 
