@@ -178,9 +178,7 @@ class TestReportview(FrappeTestCase):
 		self.assertEqual(results2[0].child_title, "parent 2 child record 1")
 
 	def test_link_field_syntax(self):
-		todo = frappe.get_doc(
-			doctype="ToDo", description="Test ToDo", allocated_to="Administrator"
-		).insert()
+		todo = frappe.get_doc(doctype="ToDo", description="Test ToDo", allocated_to="Administrator").insert()
 		result = frappe.get_all(
 			"ToDo",
 			filters={"name": todo.name},
@@ -828,7 +826,10 @@ class TestReportview(FrappeTestCase):
 			self.assertEqual(len(data[0]), 1)
 
 			data = frappe.get_list(
-				"Blog Post", filters={"published": 1}, fields=["name", "`tabTest Child`.`test_field`"], limit=1
+				"Blog Post",
+				filters={"published": 1},
+				fields=["name", "`tabTest Child`.`test_field`"],
+				limit=1,
 			)
 			self.assertFalse("test_field" in data[0])
 			self.assertTrue("name" in data[0])
@@ -862,9 +863,7 @@ class TestReportview(FrappeTestCase):
 			self.assertIsInstance(data[0]["abhi"], datetime.datetime)
 			self.assertEqual(len(data[0]), 2)
 
-			data = frappe.get_list(
-				"Blog Post", filters={"published": 1}, fields=["name", "'LABEL'"], limit=1
-			)
+			data = frappe.get_list("Blog Post", filters={"published": 1}, fields=["name", "'LABEL'"], limit=1)
 			self.assertTrue("name" in data[0])
 			self.assertTrue("LABEL" in data[0].values())
 			self.assertEqual(len(data[0]), 2)
@@ -1027,9 +1026,7 @@ class TestReportview(FrappeTestCase):
 				SELECT name
 				FROM `tabDashboard Settings`
 				WHERE {condition}
-			""".format(
-				condition=permission_query_conditions
-			),
+			""".format(condition=permission_query_conditions),
 			as_dict=1,
 		)[0]
 
@@ -1074,6 +1071,75 @@ class TestReportview(FrappeTestCase):
 		# primary key is never nullable
 		self.assertNotIn("ifnull", frappe.get_all("User", {"name": ("in", ["a", None])}, run=0))
 		self.assertNotIn("ifnull", frappe.get_all("User", {"name": ("in", ["a", ""])}, run=0))
+
+	def test_ambiguous_linked_tables(self):
+		from frappe.desk.reportview import get
+
+		if not frappe.db.exists("DocType", "Related Todos"):
+			frappe.get_doc(
+				{
+					"doctype": "DocType",
+					"custom": 1,
+					"module": "Custom",
+					"name": "Related Todos",
+					"naming_rule": "Random",
+					"autoname": "hash",
+					"fields": [
+						{
+							"label": "Todo One",
+							"fieldname": "todo_one",
+							"fieldtype": "Link",
+							"options": "ToDo",
+							"reqd": 1,
+						},
+						{
+							"label": "Todo Two",
+							"fieldname": "todo_two",
+							"fieldtype": "Link",
+							"options": "ToDo",
+							"reqd": 1,
+						},
+					],
+				}
+			).insert()
+		else:
+			frappe.db.delete("Related Todos")
+
+		todo_one = frappe.get_doc(
+			{
+				"doctype": "ToDo",
+				"description": "Todo One",
+			}
+		).insert()
+
+		todo_two = frappe.get_doc(
+			{
+				"doctype": "ToDo",
+				"description": "Todo Two",
+			}
+		).insert()
+
+		frappe.get_doc(
+			{
+				"doctype": "Related Todos",
+				"todo_one": todo_one.name,
+				"todo_two": todo_two.name,
+			}
+		).insert()
+
+		frappe.form_dict.doctype = "Related Todos"
+		frappe.form_dict.fields = [
+			"`tabRelated Todos`.`name`",
+			"`tabRelated Todos`.`todo_one`",
+			"`tabRelated Todos`.`todo_two`",
+			# because ToDo.show_title_as_field_link = 1
+			"todo_one.description as todo_one_description",
+			"todo_two.description as todo_two_description",
+		]
+
+		# Shouldn't raise pymysql.err.OperationalError: (1066, "Not unique table/alias: 'tabToDo'")
+		data = get()
+		self.assertEqual(len(data["values"]), 1)
 
 
 class TestReportView(FrappeTestCase):

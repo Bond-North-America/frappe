@@ -19,9 +19,7 @@ def export_module_json(doc, is_standard, module):
 		from frappe.modules.export_file import export_to_files
 
 		# json
-		export_to_files(
-			record_list=[[doc.doctype, doc.name]], record_module=module, create_init=is_standard
-		)
+		export_to_files(record_list=[[doc.doctype, doc.name]], record_module=module, create_init=is_standard)
 
 		path = os.path.join(
 			frappe.get_module_path(module), scrub(doc.doctype), scrub(doc.name), scrub(doc.name)
@@ -71,9 +69,7 @@ def export_customizations(module, doctype, sync_on_migrate=0, with_permissions=0
 	add(doctype)
 
 	if with_permissions:
-		custom["custom_perms"] = frappe.get_all(
-			"Custom DocPerm", fields="*", filters={"parent": doctype}
-		)
+		custom["custom_perms"] = frappe.get_all("Custom DocPerm", fields="*", filters={"parent": doctype})
 
 	# also update the custom fields and property setters for all child tables
 	for d in frappe.get_meta(doctype).get_table_fields():
@@ -156,7 +152,7 @@ def sync_customizations_for_doctype(data, folder, filename: str = ""):
 
 	if not frappe.db.exists("DocType", doctype):
 		print(_("DocType {0} does not exist.").format(doctype))
-		print(_("Skipping fixture syncing for doctyoe {0} from file {1} ").format(doctype, filename))
+		print(_("Skipping fixture syncing for doctype {0} from file {1} ").format(doctype, filename))
 		return
 
 	if data["custom_fields"]:

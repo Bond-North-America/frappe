@@ -7,7 +7,7 @@ import json
 import re
 import time
 from collections import Counter
-from typing import Callable
+from collections.abc import Callable
 
 import sqlparse
 
@@ -117,7 +117,10 @@ def normalize_query(query: str) -> str:
 		for token in q.flatten():
 			if "Token.Literal" in str(token.ttype):
 				token.value = "?"
-		return str(q)
+
+		# Transform IN parts like this: IN (?, ?, ?) -> IN (?)
+		q = re.sub(r"( IN )\(\?[\s\n\?\,]*\)", r"\1(?)", str(q), flags=re.IGNORECASE)
+		return q
 	except Exception as e:
 		print("Failed to normalize query ", e)
 
@@ -230,7 +233,7 @@ def start(*args, **kwargs):
 @administrator_only
 def stop(*args, **kwargs):
 	frappe.cache().delete_value(RECORDER_INTERCEPT_FLAG)
-	frappe.enqueue(post_process)
+	frappe.enqueue(post_process, now=frappe.flags.in_test)
 
 
 @frappe.whitelist()

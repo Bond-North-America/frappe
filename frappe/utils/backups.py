@@ -226,6 +226,9 @@ class BackupGenerator:
 		"""
 		Encrypt all the backups created using gpg.
 		"""
+		if which("gpg") is None:
+			click.secho("Please install `gpg` and ensure its available in your PATH", fg="red")
+			sys.exit(1)
 		paths = (self.backup_path_db, self.backup_path_files, self.backup_path_private_files)
 		for path in paths:
 			if os.path.exists(path):
@@ -280,13 +283,9 @@ class BackupGenerator:
 					return None
 				return file_path
 
-		latest_backups = {
-			file_type: get_latest(pattern) for file_type, pattern in file_type_slugs.items()
-		}
+		latest_backups = {file_type: get_latest(pattern) for file_type, pattern in file_type_slugs.items()}
 
-		recent_backups = {
-			file_type: old_enough(file_name) for file_type, file_name in latest_backups.items()
-		}
+		recent_backups = {file_type: old_enough(file_name) for file_type, file_name in latest_backups.items()}
 
 		return (
 			recent_backups.get("database"),
@@ -413,7 +412,9 @@ class BackupGenerator:
 
 		if self.db_type == "postgres":
 			if self.backup_includes:
-				args["include"] = " ".join([f"--table='public.\"{table}\"'" for table in self.backup_includes])
+				args["include"] = " ".join(
+					[f"--table='public.\"{table}\"'" for table in self.backup_includes]
+				)
 			elif self.backup_excludes:
 				args["exclude"] = " ".join(
 					[f"--exclude-table-data='public.\"{table}\"'" for table in self.backup_excludes]
@@ -661,6 +662,9 @@ class Backup:
 			print("Invalid path", self.file_path)
 			return
 		else:
+			if which("gpg") is None:
+				click.secho("Please install `gpg` and ensure its available in your PATH", fg="red")
+				sys.exit(1)
 			file_path_with_ext = self.file_path + ".gpg"
 			os.rename(self.file_path, file_path_with_ext)
 

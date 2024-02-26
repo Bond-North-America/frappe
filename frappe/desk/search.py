@@ -64,7 +64,6 @@ def search_widget(
 	reference_doctype=None,
 	ignore_user_permissions=False,
 ):
-
 	start = cint(start)
 
 	if isinstance(filters, str):
@@ -209,6 +208,7 @@ def search_widget(
 					and has_permission(
 						doctype,
 						ptype="select" if frappe.only_has_select_perm(doctype) else "read",
+						parent_doctype=reference_doctype,
 					)
 				)
 			)
@@ -341,9 +341,7 @@ def get_users_for_mentions():
 
 
 def get_user_groups():
-	return frappe.get_all(
-		"User Group", fields=["name as id", "name as value"], update={"is_group": True}
-	)
+	return frappe.get_all("User Group", fields=["name as id", "name as value"], update={"is_group": True})
 
 
 @frappe.whitelist()

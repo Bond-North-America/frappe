@@ -10,7 +10,7 @@ from frappe.model.naming import append_number_if_name_exists
 from frappe.modules.export_file import export_to_files
 from frappe.query_builder import Criterion
 from frappe.query_builder.utils import DocType
-from frappe.utils import cint
+from frappe.utils import cint, flt
 
 
 class NumberCard(Document):
@@ -59,9 +59,7 @@ def get_permission_query_conditions(user=None):
 	doctype_condition = False
 	module_condition = False
 
-	allowed_doctypes = [
-		frappe.db.escape(doctype) for doctype in frappe.permissions.get_doctypes_with_read()
-	]
+	allowed_doctypes = [frappe.db.escape(doctype) for doctype in frappe.permissions.get_doctypes_with_read()]
 	allowed_modules = [
 		frappe.db.escape(module.get("module_name")) for module in get_modules_from_all_apps_for_user()
 	]
@@ -72,17 +70,13 @@ def get_permission_query_conditions(user=None):
 		)
 	if allowed_modules:
 		module_condition = """`tabNumber Card`.`module` in ({allowed_modules})
-			or `tabNumber Card`.`module` is NULL""".format(
-			allowed_modules=",".join(allowed_modules)
-		)
+			or `tabNumber Card`.`module` is NULL""".format(allowed_modules=",".join(allowed_modules))
 
 	return """
 		{doctype_condition}
 		and
 		{module_condition}
-	""".format(
-		doctype_condition=doctype_condition, module_condition=module_condition
-	)
+	""".format(doctype_condition=doctype_condition, module_condition=module_condition)
 
 
 def has_permission(doc, ptype, user):
@@ -137,7 +131,7 @@ def get_result(doc, filters, to_date=None):
 	)
 	number = res[0]["result"] if res else 0
 
-	return cint(number)
+	return flt(number)
 
 
 @frappe.whitelist()

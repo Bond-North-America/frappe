@@ -11,10 +11,13 @@ from frappe.desk.utils import validate_route_conflict
 from frappe.model.document import Document
 from frappe.model.rename_doc import rename_doc
 from frappe.modules.export_file import delete_folder, export_to_files
+from frappe.utils import strip_html
 
 
 class Workspace(Document):
 	def validate(self):
+		self.title = strip_html(self.title)
+
 		if self.public and not is_workspace_manager() and not disable_saving_as_public():
 			frappe.throw(_("You need to be Workspace Manager to edit this document"))
 		if self.has_value_changed("title"):
@@ -111,7 +114,6 @@ class Workspace(Document):
 		return cards
 
 	def build_links_table_from_card(self, config):
-
 		for idx, card in enumerate(config):
 			links = loads(card.get("links"))
 
@@ -193,9 +195,7 @@ def new_page(new_page):
 	if page.get("public") and not is_workspace_manager():
 		return
 	elif (
-		not page.get("public")
-		and page.get("for_user") != frappe.session.user
-		and not is_workspace_manager()
+		not page.get("public") and page.get("for_user") != frappe.session.user and not is_workspace_manager()
 	):
 		frappe.throw(_("Cannot create private workspace of other users"), frappe.PermissionError)
 
@@ -224,6 +224,8 @@ def save_page(title, public, new_widgets, blocks):
 	pages = frappe.get_all("Workspace", filters=filters)
 	if pages:
 		doc = frappe.get_doc("Workspace", pages[0])
+	else:
+		frappe.throw(_("Workspace not found"), frappe.DoesNotExistError)
 
 	doc.content = blocks
 	doc.save(ignore_permissions=True)
@@ -238,11 +240,7 @@ def update_page(name, title, icon, parent, public):
 	public = frappe.parse_json(public)
 	doc = frappe.get_doc("Workspace", name)
 
-	if (
-		not doc.get("public")
-		and doc.get("for_user") != frappe.session.user
-		and not is_workspace_manager()
-	):
+	if not doc.get("public") and doc.get("for_user") != frappe.session.user and not is_workspace_manager():
 		frappe.throw(
 			_("Need Workspace Manager role to edit private workspace of other users"),
 			frappe.PermissionError,
@@ -263,9 +261,7 @@ def update_page(name, title, icon, parent, public):
 			rename_doc("Workspace", name, new_name, force=True, ignore_permissions=True)
 
 		# update new name and public in child pages
-		child_docs = frappe.get_all(
-			"Workspace", filters={"parent_page": doc.title, "public": doc.public}
-		)
+		child_docs = frappe.get_all("Workspace", filters={"parent_page": doc.title, "public": doc.public})
 		if child_docs:
 			for child in child_docs:
 				child_doc = frappe.get_doc("Workspace", child.name)
@@ -292,11 +288,7 @@ def hide_unhide_page(page_name: str, is_hidden: bool):
 			_("Need Workspace Manager role to hide/unhide public workspaces"), frappe.PermissionError
 		)
 
-	if (
-		not page.get("public")
-		and page.get("for_user") != frappe.session.user
-		and not is_workspace_manager()
-	):
+	if not page.get("public") and page.get("for_user") != frappe.session.user and not is_workspace_manager():
 		frappe.throw(_("Cannot update private workspace of other users"), frappe.PermissionError)
 
 	page.is_hidden = int(is_hidden)
@@ -407,9 +399,7 @@ def sort_page(workspace_pages, pages):
 
 
 def last_sequence_id(doc):
-	doc_exists = frappe.db.exists(
-		{"doctype": "Workspace", "public": doc.public, "for_user": doc.for_user}
-	)
+	doc_exists = frappe.db.exists({"doctype": "Workspace", "public": doc.public, "for_user": doc.for_user})
 
 	if not doc_exists:
 		return 0

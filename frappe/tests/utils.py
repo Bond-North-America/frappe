@@ -88,9 +88,7 @@ class FrappeTestCase(unittest.TestCase):
 		"""Formats SQL consistently so simple string comparisons can work on them."""
 		import sqlparse
 
-		return (
-			sqlparse.format(query.strip(), keyword_case="upper", reindent=True, strip_comments=True),
-		)
+		return (sqlparse.format(query.strip(), keyword_case="upper", reindent=True, strip_comments=True),)
 
 	def assertQueryEqual(self, first: str, second: str):
 		self.assertEqual(self.normalize_sql(first), self.normalize_sql(second))
@@ -194,7 +192,7 @@ def _restore_thread_locals(flags):
 
 
 @contextmanager
-def change_settings(doctype, settings_dict):
+def change_settings(doctype, settings_dict=None, /, commit=False, **settings):
 	"""A context manager to ensure that settings are changed before running
 	function and restored after running it regardless of exceptions occured.
 	This is useful in tests where you want to make changes in a function but
@@ -208,6 +206,8 @@ def change_settings(doctype, settings_dict):
 	"""
 
 	try:
+		if settings_dict is None:
+			settings_dict = settings
 		settings = frappe.get_doc(doctype)
 		# remember setting
 		previous_settings = copy.deepcopy(settings_dict)
@@ -220,6 +220,8 @@ def change_settings(doctype, settings_dict):
 		settings.save(ignore_permissions=True)
 		# singles are cached by default, clear to avoid flake
 		frappe.db.value_cache[settings] = {}
+		if commit:
+			frappe.db.commit()
 		yield  # yield control to calling function
 
 	finally:
@@ -228,6 +230,8 @@ def change_settings(doctype, settings_dict):
 		for key, value in previous_settings.items():
 			setattr(settings, key, value)
 		settings.save(ignore_permissions=True)
+		if commit:
+			frappe.db.commit()
 
 
 def timeout(seconds=30, error_message="Test timed out."):

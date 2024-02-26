@@ -53,7 +53,7 @@ class Comment(Document):
 
 	def remove_comment_from_cache(self):
 		_comments = get_comments_from_parent(self)
-		for c in _comments:
+		for c in list(_comments):
 			if c.get("name") == self.name:
 				_comments.remove(c)
 
@@ -174,7 +174,7 @@ def update_comments_in_parent(reference_doctype, reference_name, _comments):
 def update_comments_in_parent_after_request():
 	"""update _comments in parent if _comments column is missing"""
 	if hasattr(frappe.local, "_comments"):
-		for (reference_doctype, reference_name, _comments) in frappe.local._comments:
+		for reference_doctype, reference_name, _comments in frappe.local._comments:
 			add_column(reference_doctype, "_comments", "Text")
 			update_comments_in_parent(reference_doctype, reference_name, _comments)
 
