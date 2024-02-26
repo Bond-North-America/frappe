@@ -247,20 +247,18 @@ def apply(doc=None, method=None, doctype=None, name=None):
 		for assignment_rule in assignment_rule_docs:
 			if assignment_rule.is_rule_not_applicable_today():
 				continue
-
 			clear = assignment_rule.apply_unassign(doc, assignments)
 			if clear:
 				break
 
 	# apply rule only if there are no existing assignments
-	if clear:
-		for assignment_rule in assignment_rule_docs:
-			if assignment_rule.is_rule_not_applicable_today():
-				continue
+	for assignment_rule in assignment_rule_docs:
+		if assignment_rule.is_rule_not_applicable_today():
+			continue
 
-			new_apply = assignment_rule.apply_assign(doc)
-			if new_apply and not assignment_rule.disable_clear_previous_assignment:
-				break
+		new_apply = assignment_rule.apply_assign(doc)
+		if new_apply and not assignment_rule.disable_clear_previous_assignment:
+			break
 
 	# apply close rule only if assignments exists
 	assignments = get_assignments(doc)
