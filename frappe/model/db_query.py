@@ -221,15 +221,12 @@ class DatabaseQuery:
 		if frappe.db.db_type == "postgres" and args.order_by and args.group_by:
 			args = self.prepare_select_args(args)
 
-		query = (
-			"""select %(fields)s
-			from %(tables)s
-			%(conditions)s
-			%(group_by)s
-			%(order_by)s
-			%(limit)s"""
-			% args
-		)
+		query = """select {fields}
+			from {tables}
+			{conditions}
+			{group_by}
+			{order_by}
+			{limit}""".format(**args)
 
 		return frappe.db.sql(
 			query,
@@ -475,7 +472,9 @@ class DatabaseQuery:
 
 				if table_name.lower().startswith("group_concat("):
 					table_name = table_name[13:]
-				if not table_name[0] == "`":
+				if table_name.lower().startswith("distinct"):
+					table_name = table_name[8:].strip()
+				if table_name[0] != "`":
 					table_name = f"`{table_name}`"
 				if (
 					table_name not in self.query_tables
@@ -558,7 +557,7 @@ class DatabaseQuery:
 		to_remove = []
 		for fld in self.fields:
 			for f in optional_fields:
-				if f in fld and not f in self.columns:
+				if f in fld and f not in self.columns:
 					to_remove.append(fld)
 
 		for fld in to_remove:
@@ -1261,7 +1260,7 @@ def get_between_date_filter(value, df=None):
 	from_date = frappe.utils.nowdate()
 	to_date = frappe.utils.nowdate()
 
-	if value and isinstance(value, (list, tuple)):
+	if value and isinstance(value, list | tuple):
 		if len(value) >= 1:
 			from_date = value[0]
 		if len(value) >= 2:

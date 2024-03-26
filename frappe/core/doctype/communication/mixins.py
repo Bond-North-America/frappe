@@ -194,6 +194,7 @@ class CommunicationEmailMixin:
 				"print_format_attachment": 1,
 				"doctype": self.reference_doctype,
 				"name": self.reference_name,
+				"lang": frappe.local.lang,
 			}
 			final_attachments.append(d)
 
@@ -304,6 +305,7 @@ class CommunicationEmailMixin:
 		send_me_a_copy=None,
 		print_letterhead=None,
 		is_inbound_mail_communcation=None,
+		now=False,
 	):
 		if input_dict := self.sendmail_input_dict(
 			print_html=print_html,
@@ -312,4 +314,4 @@ class CommunicationEmailMixin:
 			print_letterhead=print_letterhead,
 			is_inbound_mail_communcation=is_inbound_mail_communcation,
 		):
-			frappe.sendmail(**input_dict)
+			frappe.sendmail(now=now, **input_dict)

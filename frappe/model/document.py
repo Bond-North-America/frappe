@@ -540,6 +540,7 @@ class Document(BaseDocument):
 		self._validate_selects()
 		self._validate_non_negative()
 		self._validate_length()
+		self._fix_rating_value()
 		self._validate_code_fields()
 		self._sync_autoname_field()
 		self._extract_images_from_text_editor()
@@ -552,6 +553,7 @@ class Document(BaseDocument):
 			d._validate_selects()
 			d._validate_non_negative()
 			d._validate_length()
+			d._fix_rating_value()
 			d._validate_code_fields()
 			d._sync_autoname_field()
 			d._extract_images_from_text_editor()
@@ -585,6 +587,15 @@ class Document(BaseDocument):
 			if flt(self.get(df.fieldname)) < 0:
 				msg = get_msg(df)
 				frappe.throw(msg, frappe.NonNegativeError, title=_("Negative Value"))
+
+	def _fix_rating_value(self):
+		for field in self.meta.get("fields", {"fieldtype": "Rating"}):
+			value = self.get(field.fieldname)
+			if not isinstance(value, float):
+				value = flt(value)
+
+			# Make sure rating is between 0 and 1
+			self.set(field.fieldname, max(0, min(value, 1)))
 
 	def validate_workflow(self):
 		"""Validate if the workflow transition is valid"""
@@ -855,7 +866,7 @@ class Document(BaseDocument):
 		if not missing:
 			return
 
-		for fieldname, msg in missing:
+		for _fieldname, msg in missing:
 			msgprint(msg)
 
 		if frappe.flags.print_messages:
@@ -954,7 +965,7 @@ class Document(BaseDocument):
 			return
 
 		def _evaluate_alert(alert):
-			if not alert.name in self.flags.notifications_executed:
+			if alert.name not in self.flags.notifications_executed:
 				evaluate_alert(self, alert.name, alert.event)
 				self.flags.notifications_executed.append(alert.name)
 
@@ -1216,7 +1227,7 @@ class Document(BaseDocument):
 			doc_to_compare = frappe.get_doc(self.doctype, amended_from)
 
 		version = frappe.new_doc("Version")
-		if is_useful_diff := version.update_version_info(doc_to_compare, self):
+		if version.update_version_info(doc_to_compare, self):
 			version.insert(ignore_permissions=True)
 
 			if not frappe.flags.in_migrate:
@@ -1462,11 +1473,16 @@ class Document(BaseDocument):
 				title=_("Document Queued"),
 			)
 
+		enqueue_after_commit = kwargs.pop("enqueue_after_commit", None)
+		if enqueue_after_commit is None:
+			enqueue_after_commit = True
+
 		return enqueue(
 			"frappe.model.document.execute_action",
 			__doctype=self.doctype,
 			__name=self.name,
 			__action=action,
+			enqueue_after_commit=enqueue_after_commit,
 			**kwargs,
 		)
 
@@ -1479,7 +1495,7 @@ class Document(BaseDocument):
 		if file_lock.lock_exists(signature):
 			lock_exists = True
 			if timeout:
-				for i in range(timeout):
+				for _i in range(timeout):
 					time.sleep(1)
 					if not file_lock.lock_exists(signature):
 						lock_exists = False

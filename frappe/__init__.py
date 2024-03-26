@@ -10,6 +10,7 @@ be used to build database driven apps.
 
 Read the documentation: https://frappeframework.com/docs
 """
+import faulthandler
 import functools
 import gc
 import importlib
@@ -17,9 +18,11 @@ import inspect
 import json
 import os
 import re
+import signal
 import unicodedata
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, overload
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal, Optional, overload
 
 import click
 from werkzeug.local import Local, release_local
@@ -44,7 +47,7 @@ from .utils.jinja import (
 )
 from .utils.lazy_loader import lazy_import
 
-__version__ = "14.66.2"
+__version__ = "14.68.2"
 __title__ = "Frappe Framework"
 
 controllers = {}
@@ -252,6 +255,7 @@ def init(site: str, sites_path: str = ".", new_site: bool = False, force=False) 
 	if not _qb_patched.get(local.conf.db_type):
 		patch_query_execute()
 		patch_query_aggregation()
+		_register_fault_handler()
 
 	local.initialised = True
 
@@ -365,9 +369,9 @@ def cache() -> "RedisWrapper":
 	"""Returns redis connection."""
 	global redis_server
 	if not redis_server:
-		from frappe.utils.redis_wrapper import RedisWrapper
+		from frappe.utils.redis_wrapper import setup_cache
 
-		redis_server = RedisWrapper.from_url(conf.get("redis_cache") or "redis://localhost:11311")
+		redis_server = setup_cache()
 	return redis_server
 
 
@@ -383,7 +387,7 @@ def errprint(msg: str) -> None:
 
 	:param msg: Message."""
 	msg = as_unicode(msg)
-	if not request or (not "cmd" in local.form_dict) or conf.developer_mode:
+	if not request or ("cmd" not in local.form_dict) or conf.developer_mode:
 		print(msg)
 
 	error_log.append({"exc": msg})
@@ -404,6 +408,13 @@ def log(msg: str) -> None:
 	debug_log.append(as_unicode(msg))
 
 
+@functools.lru_cache(maxsize=1024)
+def _strip_html_tags(message):
+	from frappe.utils import strip_html_tags
+
+	return strip_html_tags(message)
+
+
 def msgprint(
 	msg: str,
 	title: str | None = None,
@@ -412,7 +423,7 @@ def msgprint(
 	as_list: bool = False,
 	indicator: Literal["blue", "green", "orange", "red", "yellow"] | None = None,
 	alert: bool = False,
-	primary_action: str = None,
+	primary_action: str | None = None,
 	is_minimizable: bool = False,
 	wide: bool = False,
 	*,
@@ -435,14 +446,8 @@ def msgprint(
 	import inspect
 	import sys
 
-	from frappe.utils import strip_html_tags
-
 	msg = safe_decode(msg)
 	out = _dict(message=msg)
-
-	@functools.lru_cache(maxsize=1024)
-	def _strip_html_tags(message):
-		return strip_html_tags(message)
 
 	def _raise_exception():
 		if raise_exception:
@@ -792,6 +797,7 @@ def is_whitelisted(method):
 
 def read_only():
 	def innfn(fn):
+		@functools.wraps(fn)
 		def wrapper_fn(*args, **kwargs):
 			# frappe.read_only could be called from nested functions, in such cases don't swap the
 			# connection again.
@@ -1163,7 +1169,7 @@ def get_cached_value(doctype: str, name: str, fieldname: str = "name", as_dict: 
 
 	values = [doc.get(f) for f in fieldname]
 	if as_dict:
-		return _dict(zip(fieldname, values))
+		return _dict(zip(fieldname, values, strict=False))
 	return values
 
 
@@ -1372,7 +1378,7 @@ def get_pymodule_path(modulename, *joins):
 
 	:param modulename: Python module name.
 	:param *joins: Join additional path elements using `os.path.join`."""
-	if not "public" in joins:
+	if "public" not in joins:
 		joins = [scrub(part) for part in joins]
 	return os.path.join(os.path.dirname(get_module(scrub(modulename)).__file__ or ""), *joins)
 
@@ -1476,7 +1482,7 @@ def _load_app_hooks(app_name: str | None = None):
 			raise
 
 		def _is_valid_hook(obj):
-			return not isinstance(obj, (types.ModuleType, types.FunctionType, type))
+			return not isinstance(obj, types.ModuleType | types.FunctionType | type)
 
 		for key, value in inspect.getmembers(app_hooks, predicate=_is_valid_hook):
 			if not key.startswith("_"):
@@ -1484,7 +1490,9 @@ def _load_app_hooks(app_name: str | None = None):
 	return hooks
 
 
-def get_hooks(hook: str = None, default: Any | None = "_KEEP_DEFAULT_LIST", app_name: str = None) -> _dict:
+def get_hooks(
+	hook: str | None = None, default: Any | None = "_KEEP_DEFAULT_LIST", app_name: str | None = None
+) -> _dict:
 	"""Get hooks via `app/hooks.py`
 
 	:param hook: Name of the hook. Will gather all hooks for this name and return as a list.
@@ -1727,13 +1735,13 @@ def copy_doc(doc: "Document", ignore_no_copy: bool = True) -> "Document":
 
 	newdoc = get_doc(copy.deepcopy(d))
 	newdoc.set("__islocal", 1)
-	for fieldname in fields_to_clear + ["amended_from", "amendment_date"]:
+	for fieldname in [*fields_to_clear, "amended_from", "amendment_date"]:
 		newdoc.set(fieldname, None)
 
 	if not ignore_no_copy:
 		remove_no_copy_fields(newdoc)
 
-	for i, d in enumerate(newdoc.get_all_children()):
+	for _i, d in enumerate(newdoc.get_all_children()):
 		d.set("__islocal", 1)
 
 		for fieldname in fields_to_clear:
@@ -1919,7 +1927,7 @@ def get_all(doctype, *args, **kwargs):
 	        frappe.get_all("ToDo", fields=["*"], filters = {"description": ("like", "test%")})
 	"""
 	kwargs["ignore_permissions"] = True
-	if not "limit_page_length" in kwargs:
+	if "limit_page_length" not in kwargs:
 		kwargs["limit_page_length"] = 0
 	return get_list(doctype, *args, **kwargs)
 
@@ -2368,7 +2376,7 @@ def mock(type, size=1, locale="en"):
 	if type not in dir(fake):
 		raise ValueError("Not a valid mock type.")
 	else:
-		for i in range(size):
+		for _i in range(size):
 			data = getattr(fake, type)()
 			results.append(data)
 
@@ -2382,7 +2390,7 @@ def validate_and_sanitize_search_inputs(fn):
 	def wrapper(*args, **kwargs):
 		from frappe.desk.search import sanitize_searchfield
 
-		kwargs.update(dict(zip(fn.__code__.co_varnames, args)))
+		kwargs.update(dict(zip(fn.__code__.co_varnames, args, strict=False)))
 		sanitize_searchfield(kwargs["searchfield"])
 		kwargs["start"] = cint(kwargs["start"])
 		kwargs["page_len"] = cint(kwargs["page_len"])
@@ -2393,6 +2401,10 @@ def validate_and_sanitize_search_inputs(fn):
 		return fn(**kwargs)
 
 	return wrapper
+
+
+def _register_fault_handler():
+	faulthandler.register(signal.SIGUSR1)
 
 
 if _tune_gc:

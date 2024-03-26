@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import typing
 from shutil import which
 
 import click
@@ -16,6 +17,9 @@ DATA_IMPORT_DEPRECATION = (
 	"[DEPRECATED] The `import-csv` command used 'Data Import Legacy' which has been deprecated.\n"
 	"Use `data-import` command instead to import data via 'Data Import'."
 )
+
+if typing.TYPE_CHECKING:
+	from IPython.terminal.embed import InteractiveShellEmbed
 
 
 @click.command("build")
@@ -499,10 +503,13 @@ def mariadb(context):
 	"""
 	Enter into mariadb console for a given site.
 	"""
+	from frappe.utils import get_site_path
+
 	site = get_site(context)
 	if not site:
 		raise SiteNotSpecifiedError
 	frappe.init(site=site)
+	os.environ["MYSQL_HISTFILE"] = os.path.abspath(get_site_path("logs", "mariadb_console.log"))
 	_mariadb()
 
 
@@ -573,7 +580,7 @@ def jupyter(context):
 		os.mkdir(jupyter_notebooks_path)
 	bin_path = os.path.abspath("../env/bin")
 	print(
-		"""
+		f"""
 Starting Jupyter notebook
 Run the following in your first cell to connect notebook to frappe
 ```
@@ -583,7 +590,7 @@ frappe.connect()
 frappe.local.lang = frappe.db.get_default('lang')
 frappe.db.connect()
 ```
-	""".format(site=site, sites_path=sites_path)
+	"""
 	)
 	os.execv(
 		f"{bin_path}/jupyter",
@@ -599,6 +606,18 @@ def _console_cleanup():
 	# Execute rollback_observers on console close
 	frappe.db.rollback()
 	frappe.destroy()
+
+
+def store_logs(terminal: "InteractiveShellEmbed") -> None:
+	from contextlib import suppress
+
+	frappe.log_level = 20  # info
+	with suppress(Exception):
+		logger = frappe.logger("ipython")
+		logger.info("=== bench console session ===")
+		for line in terminal.history_manager.get_range():
+			logger.info(line[2])
+		logger.info("=== session end ===")
 
 
 @click.command("console")
@@ -624,6 +643,7 @@ def console(context, autoreload=False):
 
 	all_apps = frappe.get_installed_apps()
 	failed_to_import = []
+	register(store_logs, terminal)  # Note: atexit runs in reverse order of registration
 
 	for app in list(all_apps):
 		try:

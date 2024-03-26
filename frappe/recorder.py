@@ -44,7 +44,7 @@ def get_current_stack_frames():
 	try:
 		current = inspect.currentframe()
 		frames = inspect.getouterframes(current, context=10)
-		for frame, filename, lineno, function, context, index in list(reversed(frames))[:-2]:
+		for _frame, filename, lineno, function, _context, _index in list(reversed(frames))[:-2]:
 			if "/apps/" in filename or "<serverscript>" in filename:
 				yield {
 					"filename": TRACEBACK_PATH_PATTERN.sub("", filename),
@@ -71,7 +71,9 @@ def post_process():
 
 	for request in result:
 		for call in request["calls"]:
-			formatted_query = sqlparse.format(call["query"].strip(), keyword_case="upper", reindent=True)
+			formatted_query = sqlparse.format(
+				call["query"].strip(), keyword_case="upper", reindent=True, strip_comments=True
+			)
 			call["query"] = formatted_query
 
 			# Collect EXPLAIN for executed query

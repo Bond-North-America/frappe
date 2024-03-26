@@ -14,6 +14,7 @@ from frappe.desk.doctype.notification_settings.notification_settings import (
 	toggle_notifications,
 )
 from frappe.desk.notifications import clear_notifications
+from frappe.model.delete_doc import check_if_doc_is_linked
 from frappe.model.document import Document
 from frappe.query_builder import DocType
 from frappe.rate_limiter import rate_limit
@@ -455,6 +456,19 @@ class User(Document):
 		# delete user permissions
 		frappe.db.delete("User Permission", {"user": self.name})
 
+		# Delete OAuth data
+		frappe.db.delete("OAuth Authorization Code", {"user": self.name})
+		frappe.db.delete("Token Cache", {"user": self.name})
+
+		# Delete EPS data
+		frappe.db.delete("Energy Point Log", {"user": self.name})
+
+		# Ask user to disable instead if document is still linked
+		try:
+			check_if_doc_is_linked(self)
+		except frappe.LinkExistsError:
+			frappe.throw(_("You can disable the user instead of deleting it."), frappe.LinkExistsError)
+
 	def before_rename(self, old_name, new_name, merge=False):
 		frappe.clear_cache(user=old_name)
 		self.validate_rename(old_name, new_name)
@@ -481,10 +495,9 @@ class User(Document):
 					has_fields.append(d.get("name"))
 			for field in has_fields:
 				frappe.db.sql(
-					"""UPDATE `%s`
-					SET `%s` = %s
-					WHERE `%s` = %s"""
-					% (tab, field, "%s", field, "%s"),
+					"""UPDATE `{}`
+					SET `{}` = {}
+					WHERE `{}` = {}""".format(tab, field, "%s", field, "%s"),
 					(new_name, old_name),
 				)
 
@@ -527,7 +540,7 @@ class User(Document):
 
 	def ensure_unique_roles(self):
 		exists = []
-		for i, d in enumerate(self.get("roles")):
+		for _i, d in enumerate(self.get("roles")):
 			if (not d.role) or (d.role in exists):
 				self.get("roles").remove(d)
 			else:
@@ -708,7 +721,7 @@ def get_perm_info(role):
 	return get_all_perms(role)
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True, methods=["POST"])
 def update_password(new_password, logout_all_sessions=0, key=None, old_password=None):
 	# validate key to avoid key input like ['like', '%'], '', ['in', ['']]
 	if key and not isinstance(key, str):
@@ -854,7 +867,7 @@ def reset_user_data(user):
 	return user_doc, redirect_url
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def verify_password(password):
 	frappe.local.login_manager.check_password(frappe.session.user, password)
 
@@ -910,7 +923,7 @@ def sign_up(email, full_name, redirect_to):
 			return 2, _("Please ask your administrator to verify your sign-up")
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True, methods=["POST"])
 @rate_limit(limit=get_password_reset_limit, seconds=60 * 60)
 def reset_password(user: str) -> str:
 	try:
@@ -991,7 +1004,7 @@ def get_total_users():
 def get_system_users(exclude_users=None, limit=None):
 	if not exclude_users:
 		exclude_users = []
-	elif not isinstance(exclude_users, (list, tuple)):
+	elif not isinstance(exclude_users, list | tuple):
 		exclude_users = [exclude_users]
 
 	limit_cond = ""
@@ -1081,7 +1094,7 @@ def handle_password_test_fail(feedback: dict):
 	suggestions = feedback.get("suggestions", [])
 	warning = feedback.get("warning", "")
 
-	frappe.throw(msg=" ".join([warning] + suggestions), title=_("Invalid Password"))
+	frappe.throw(msg=" ".join([warning, *suggestions]), title=_("Invalid Password"))
 
 
 def update_gravatar(name):
@@ -1175,7 +1188,7 @@ def get_restricted_ip_list(user):
 	return [i.strip() for i in user.restrict_ip.split(",")]
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def generate_keys(user):
 	"""
 	generate api key and api secret

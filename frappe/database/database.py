@@ -27,6 +27,7 @@ from frappe.database.utils import (
 )
 from frappe.exceptions import DoesNotExistError, ImplicitCommitError
 from frappe.model.utils.link_count import flush_local_link_count
+from frappe.monitor import get_trace_id
 from frappe.query_builder.functions import Count
 from frappe.utils import cast as cast_fieldtype
 from frappe.utils import cint, get_datetime, get_table_name, getdate, now, sbool
@@ -57,10 +58,10 @@ class Database:
 	VARCHAR_LEN = 140
 	MAX_COLUMN_LENGTH = 64
 
-	OPTIONAL_COLUMNS = ["_user_tags", "_comments", "_assign", "_liked_by"]
-	DEFAULT_SHORTCUTS = ["_Login", "__user", "_Full Name", "Today", "__today", "now", "Now"]
+	OPTIONAL_COLUMNS = ("_user_tags", "_comments", "_assign", "_liked_by")
+	DEFAULT_SHORTCUTS = ("_Login", "__user", "_Full Name", "Today", "__today", "now", "Now")
 	STANDARD_VARCHAR_COLUMNS = ("name", "owner", "modified_by")
-	DEFAULT_COLUMNS = ["name", "creation", "modified", "modified_by", "owner", "docstatus", "idx"]
+	DEFAULT_COLUMNS = ("name", "creation", "modified", "modified_by", "owner", "docstatus", "idx")
 	CHILD_TABLE_COLUMNS = ("parent", "parenttype", "parentfield")
 	MAX_WRITES_PER_TRANSACTION = 200_000
 
@@ -122,8 +123,8 @@ class Database:
 	def connect(self):
 		"""Connects to a database as set in `site_config.json`."""
 		self.cur_db_name = self.user
-		self._conn: Union["MariadbConnection", "PostgresConnection"] = self.get_connection()
-		self._cursor: Union["MariadbCursor", "PostgresCursor"] = self._conn.cursor()
+		self._conn: "MariadbConnection" | "PostgresConnection" = self.get_connection()
+		self._cursor: "MariadbCursor" | "PostgresCursor" = self._conn.cursor()
 		frappe.local.rollback_observers = []
 
 		try:
@@ -231,9 +232,13 @@ class Database:
 
 		if values == EmptyQueryValues:
 			values = None
-		elif not isinstance(values, (tuple, dict, list)):
+		elif not isinstance(values, tuple | dict | list):
 			values = (values,)
+
 		query, values = self._transform_query(query, values)
+
+		if trace_id := get_trace_id():
+			query += f" /* FRAPPE_TRACE_ID: {trace_id} */"
 
 		try:
 			self._cursor.execute(query, values)
@@ -321,7 +326,7 @@ class Database:
 			elif as_dict:
 				keys = [column[0] for column in self._cursor.description]
 				for row in result:
-					row = frappe._dict(zip(keys, row))
+					row = frappe._dict(zip(keys, row, strict=False))
 					if update:
 						row.update(update)
 					yield row
@@ -390,7 +395,7 @@ class Database:
 				return query % {
 					k: frappe.db.escape(v) if isinstance(v, str) else v for k, v in values.items()
 				}
-			elif isinstance(values, (list, tuple)):
+			elif isinstance(values, list | tuple):
 				return query % tuple(frappe.db.escape(v) if isinstance(v, str) else v for v in values)
 			return query, values
 
@@ -458,7 +463,7 @@ class Database:
 			keys = [column[0] for column in self._cursor.description]
 
 		if not as_utf8:
-			return [frappe._dict(zip(keys, row)) for row in result]
+			return [frappe._dict(zip(keys, row, strict=False)) for row in result]
 
 		ret = []
 		for r in result:
@@ -468,7 +473,7 @@ class Database:
 					value = value.encode("utf-8")
 				values.append(value)
 
-			ret.append(frappe._dict(zip(keys, values)))
+			ret.append(frappe._dict(zip(keys, values, strict=False)))
 		return ret
 
 	@staticmethod
@@ -481,9 +486,9 @@ class Database:
 		"""Returns true if the first row in the result has a Date, Datetime, Long Int."""
 		if result and result[0]:
 			for v in result[0]:
-				if isinstance(v, (datetime.date, datetime.timedelta, datetime.datetime, int)):
+				if isinstance(v, datetime.date | datetime.timedelta | datetime.datetime | int):
 					return True
-				if formatted and isinstance(v, (int, float)):
+				if formatted and isinstance(v, int | float):
 					return True
 
 		return False
@@ -527,6 +532,8 @@ class Database:
 		run=True,
 		pluck=False,
 		distinct=False,
+		skip_locked=False,
+		wait=True,
 	):
 		"""Returns a document property or list of properties.
 
@@ -537,6 +544,11 @@ class Database:
 		:param as_dict: Return values as dict.
 		:param debug: Print query in error log.
 		:param order_by: Column to order by
+		:param cache: Use cached results fetched during current job/request
+		:param pluck: pluck first column instead of returning as nested list or dict.
+		:param for_update: All the affected/read rows will be locked.
+		:param skip_locked: Skip selecting currently locked rows.
+		:param wait: Wait for aquiring lock
 
 		Example:
 
@@ -567,6 +579,8 @@ class Database:
 			pluck=pluck,
 			distinct=distinct,
 			limit=1,
+			skip_locked=skip_locked,
+			wait=wait,
 		)
 
 		if not run:
@@ -599,6 +613,8 @@ class Database:
 		pluck=False,
 		distinct=False,
 		limit=None,
+		skip_locked=False,
+		wait=True,
 	):
 		"""Returns multiple document properties.
 
@@ -638,6 +654,9 @@ class Database:
 				distinct=distinct,
 				limit=limit,
 				as_dict=as_dict,
+				skip_locked=skip_locked,
+				wait=True,
+				for_update=for_update,
 			)
 
 		else:
@@ -658,11 +677,13 @@ class Database:
 						debug=debug,
 						order_by=order_by,
 						update=update,
-						for_update=for_update,
 						run=run,
 						pluck=pluck,
 						distinct=distinct,
 						limit=limit,
+						for_update=for_update,
+						skip_locked=skip_locked,
+						wait=wait,
 					)
 				except Exception as e:
 					if ignore and (
@@ -864,6 +885,8 @@ class Database:
 		order_by=None,
 		update=None,
 		for_update=False,
+		skip_locked=False,
+		wait=True,
 		run=True,
 		pluck=False,
 		distinct=False,
@@ -874,12 +897,14 @@ class Database:
 			filters=filters,
 			order_by=order_by,
 			for_update=for_update,
+			skip_locked=skip_locked,
+			wait=wait,
 			fields=fields,
 			distinct=distinct,
 			limit=limit,
 			validate_filters=True,
 		)
-		if fields == "*" and not isinstance(fields, (list, tuple)) and not isinstance(fields, Criterion):
+		if fields == "*" and not isinstance(fields, list | tuple) and not isinstance(fields, Criterion):
 			as_dict = True
 
 		return query.run(as_dict=as_dict, debug=debug, update=update, run=run, pluck=pluck)
@@ -897,6 +922,9 @@ class Database:
 		distinct=False,
 		limit=None,
 		as_dict=False,
+		for_update=False,
+		skip_locked=False,
+		wait=True,
 	):
 		if names := list(filter(None, names)):
 			return frappe.qb.get_query(
@@ -907,6 +935,9 @@ class Database:
 				distinct=distinct,
 				limit=limit,
 				validate_filters=True,
+				for_update=for_update,
+				skip_locked=skip_locked,
+				wait=wait,
 			).run(debug=debug, run=run, as_dict=as_dict, pluck=pluck)
 		return {}
 
@@ -1300,7 +1331,7 @@ class Database:
 		query = sql_dict.get(current_dialect)
 		return self.sql(query, values, **kwargs)
 
-	def delete(self, doctype: str, filters: dict | list = None, debug=False, **kwargs):
+	def delete(self, doctype: str, filters: dict | list | None = None, debug=False, **kwargs):
 		"""Delete rows from a table in site which match the passed filters. This
 		does trigger DocType hooks. Simply runs a DELETE query in the database.
 

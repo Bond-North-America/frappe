@@ -125,7 +125,7 @@ def application(request: Request):
 
 		try:
 			run_after_request_hooks(request, response)
-		except Exception as e:
+		except Exception:
 			# We can not handle exceptions safely here.
 			frappe.logger().error("Failed to run after request hook", exc_info=True)
 
@@ -375,11 +375,7 @@ def handle_exception(e):
 
 def sync_database(rollback: bool) -> bool:
 	# if HTTP method would change server state, commit if necessary
-	if (
-		frappe.db
-		and (frappe.local.flags.commit or frappe.local.request.method in UNSAFE_HTTP_METHODS)
-		and frappe.db.transaction_writes
-	):
+	if frappe.db and (frappe.local.flags.commit or frappe.local.request.method in UNSAFE_HTTP_METHODS):
 		frappe.db.commit()
 		rollback = False
 	elif frappe.db:
