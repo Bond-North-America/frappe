@@ -47,7 +47,7 @@ from .utils.jinja import (
 )
 from .utils.lazy_loader import lazy_import
 
-__version__ = "14.68.2"
+__version__ = "14.76.0"
 __title__ = "Frappe Framework"
 
 controllers = {}
@@ -533,11 +533,18 @@ def throw(
 	is_minimizable: bool = False,
 	wide: bool = False,
 	as_list: bool = False,
+	primary_action=None,
 ) -> None:
 	"""Throw execption and show message (`msgprint`).
 
 	:param msg: Message.
-	:param exc: Exception class. Default `frappe.ValidationError`"""
+	:param exc: Exception class. Default `frappe.ValidationError`
+	:param title: [optional] Message title. Default: "Message".
+	:param is_minimizable: [optional] Allow users to minimize the modal
+	:param wide: [optional] Show wide modal
+	:param as_list: [optional] If `msg` is a list, render as un-ordered list.
+	:param primary_action: [optional] Bind a primary server/client side action.
+	"""
 	msgprint(
 		msg,
 		raise_exception=exc,
@@ -546,6 +553,7 @@ def throw(
 		is_minimizable=is_minimizable,
 		wide=wide,
 		as_list=as_list,
+		primary_action=primary_action,
 	)
 
 
@@ -2354,9 +2362,22 @@ def safe_encode(param, encoding="utf-8"):
 	return param
 
 
-def safe_decode(param, encoding="utf-8"):
+def safe_decode(param, encoding="utf-8", fallback_map: dict | None = None):
+	"""
+	Method to safely decode data into a string
+
+	:param param: The data to be decoded
+	:param encoding: The encoding to decode into
+	:param fallback_map: A fallback map to reference in case of a LookupError
+	:return:
+	"""
 	try:
 		param = param.decode(encoding)
+	except LookupError:
+		try:
+			param = param.decode((fallback_map or {}).get(encoding, "utf-8"))
+		except Exception:
+			pass
 	except Exception:
 		pass
 	return param
@@ -2404,7 +2425,12 @@ def validate_and_sanitize_search_inputs(fn):
 
 
 def _register_fault_handler():
-	faulthandler.register(signal.SIGUSR1)
+	import io
+	import sys
+
+	# Some libraries monkey patch stderr, we need actual fd
+	if isinstance(sys.__stderr__, io.TextIOWrapper):
+		faulthandler.register(signal.SIGUSR1, file=sys.__stderr__)
 
 
 if _tune_gc:

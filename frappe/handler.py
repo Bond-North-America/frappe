@@ -12,6 +12,7 @@ import frappe.sessions
 import frappe.utils
 from frappe import _, is_whitelisted
 from frappe.core.doctype.server_script.server_script_utils import get_server_script_map
+from frappe.monitor import add_data_to_monitor
 from frappe.utils import cint
 from frappe.utils.csvutils import build_csv_response
 from frappe.utils.image import optimize_image
@@ -107,11 +108,6 @@ def is_valid_http_method(method):
 
 def throw_permission_error():
 	frappe.throw(_("Not permitted"), frappe.PermissionError)
-
-
-@frappe.whitelist(allow_guest=True)
-def version():
-	return frappe.__version__
 
 
 @frappe.whitelist(allow_guest=True)
@@ -331,6 +327,8 @@ def run_doc_method(method, docs=None, dt=None, dn=None, arg=None, args=None):
 		return
 
 	frappe.response["message"] = response
+
+	add_data_to_monitor(methodname=method)
 
 
 # for backwards compatibility

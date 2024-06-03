@@ -53,6 +53,7 @@ frappe.views.CommunicationComposer = class {
 				fieldtype: "MultiSelect",
 				reqd: 0,
 				fieldname: "recipients",
+				default: this.get_default_recipients("recipients"),
 			},
 			{
 				fieldtype: "Button",
@@ -71,11 +72,13 @@ frappe.views.CommunicationComposer = class {
 				label: __("CC"),
 				fieldtype: "MultiSelect",
 				fieldname: "cc",
+				default: this.get_default_recipients("cc"),
 			},
 			{
 				label: __("BCC"),
 				fieldtype: "MultiSelect",
 				fieldname: "bcc",
+				default: this.get_default_recipients("bcc"),
 			},
 			{
 				fieldtype: "Section Break",
@@ -185,6 +188,14 @@ frappe.views.CommunicationComposer = class {
 		}
 
 		return fields;
+	}
+
+	get_default_recipients(fieldname) {
+		if (this.frm?.events.get_email_recipients) {
+			return (this.frm.events.get_email_recipients(this.frm, fieldname) || []).join(", ");
+		} else {
+			return "";
+		}
 	}
 
 	toggle_more_options(show_options) {
@@ -598,18 +609,27 @@ frappe.views.CommunicationComposer = class {
 
 	get_attachment_row(attachment, checked) {
 		return $(`<p class="checkbox flex">
-			<label class="ellipsis" title="${attachment.file_name}">
+			<label title="${attachment.file_name}" style="max-width: 100%">
 				<input
 					type="checkbox"
 					data-file-name="${attachment.name}"
 					${checked ? "checked" : ""}>
 				</input>
-				<span class="ellipsis">${attachment.file_name}</span>
+				<span
+					class="ellipsis"
+					style="max-width: calc(100% - var(--checkbox-size) - var(--checkbox-right-margin) - var(--padding-xs) - 16px)"
+				>
+					${attachment.file_name}
+				</span>
+				<a
+					href="${attachment.file_url}"
+					target="_blank"
+					class="btn-link"
+					style="padding-left: var(--padding-xs)"
+				>
+					${frappe.utils.icon("link-url", "sm")}
+				</a>
 			</label>
-			&nbsp;
-			<a href="${attachment.file_url}" target="_blank" class="btn-linkF">
-				${frappe.utils.icon("link-url")}
-			</a>
 		</p>`);
 	}
 

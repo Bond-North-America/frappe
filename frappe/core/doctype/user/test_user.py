@@ -2,12 +2,14 @@
 # License: MIT. See LICENSE
 import json
 import time
+from contextlib import contextmanager
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
 
 import frappe
 import frappe.exceptions
 from frappe.core.doctype.user.user import (
+	User,
 	handle_password_test_fail,
 	reset_password,
 	sign_up,
@@ -287,7 +289,7 @@ class TestUser(FrappeTestCase):
 		res1 = c.session.post(url, data=data, verify=c.verify, headers=c.headers)
 		res2 = c.session.post(url, data=data, verify=c.verify, headers=c.headers)
 		self.assertEqual(res1.status_code, 404)
-		self.assertEqual(res2.status_code, 417)
+		self.assertEqual(res2.status_code, 429)
 
 	def test_user_rename(self):
 		old_name = "test_user_rename@example.com"
@@ -453,6 +455,28 @@ class TestUser(FrappeTestCase):
 			update_password(new_password, key=key),
 			"The reset password link has been expired",
 		)
+
+
+@contextmanager
+def test_user(
+	*, first_name: str | None = None, email: str | None = None, roles: list[str], commit=False, **kwargs
+):
+	try:
+		first_name = first_name or frappe.generate_hash()
+		email = email or (first_name + "@example.com")
+		user: User = frappe.get_doc(
+			doctype="User",
+			send_welcome_email=0,
+			email=email,
+			first_name=first_name,
+			**kwargs,
+		)
+		user.append_roles(*roles)
+		user.insert()
+		yield user
+	finally:
+		user.delete(force=True, ignore_permissions=True)
+		commit and frappe.db.commit()
 
 
 def delete_contact(user):

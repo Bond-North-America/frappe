@@ -224,14 +224,7 @@ function format_content_for_timeline(content) {
 	// limits content to 40 characters
 	// escapes HTML
 	// and makes it bold
-	try{
-		if(frappe.utils.is_html(content)){
-				var regex = /(<([^>]+)>)/ig
-				return content.replace(regex, " ");
-			}
-		}
-	catch(e){
-	}
+	content = frappe.utils.html2text(content);
 	content = frappe.ellipsis(content, 40) || '""';
 	content = frappe.utils.escape_html(content);
 	return content.bold();

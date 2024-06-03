@@ -530,8 +530,8 @@ class BaseDocument:
 			if frappe.db.is_primary_key_violation(e):
 				if self.meta.autoname == "hash":
 					# hash collision? try again
-					frappe.flags.retry_count = (frappe.flags.retry_count or 0) + 1
-					if frappe.flags.retry_count > 5 and not frappe.flags.in_test:
+					self.flags.retry_count = (self.flags.retry_count or 0) + 1
+					if self.flags.retry_count > 5:
 						raise
 					self.name = None
 					self.db_insert()
@@ -751,13 +751,14 @@ class BaseDocument:
 				# that are mapped as link_fieldname.source_fieldname in Options of
 				# Readonly or Data or Text type fields
 
+				meta = frappe.get_meta(doctype)
 				fields_to_fetch = [
 					_df
 					for _df in self.meta.get_fields_to_fetch(df.fieldname)
 					if not _df.get("fetch_if_empty")
 					or (_df.get("fetch_if_empty") and not self.get(_df.fieldname))
 				]
-				if not frappe.get_meta(doctype).get("is_virtual"):
+				if not meta.get("is_virtual"):
 					if not fields_to_fetch:
 						# cache a single value type
 						values = _dict(name=frappe.db.get_value(doctype, docname, "name", cache=True))
@@ -769,10 +770,10 @@ class BaseDocument:
 						# don't cache if fetching other values too
 						values = frappe.db.get_value(doctype, docname, values_to_fetch, as_dict=True)
 
-				if getattr(frappe.get_meta(doctype), "issingle", 0):
+				if getattr(meta, "issingle", 0):
 					values.name = doctype
 
-				if frappe.get_meta(doctype).get("is_virtual"):
+				if meta.get("is_virtual"):
 					values = frappe.get_doc(doctype, docname).as_dict()
 
 				if values:
@@ -782,7 +783,8 @@ class BaseDocument:
 						if self.is_new() or not self.docstatus.is_submitted() or _df.allow_on_submit:
 							self.set_fetch_from_value(doctype, _df, values)
 
-					notify_link_count(doctype, docname)
+					if not meta.istable:
+						notify_link_count(doctype, docname)
 
 					if not values.name:
 						invalid_links.append((df.fieldname, docname, get_msg(df, docname)))
@@ -933,6 +935,9 @@ class BaseDocument:
 					self.throw_length_exceeded_error(df, max_length, value)
 
 			elif column_type in ("int", "bigint", "smallint"):
+				if cint(df.get("length")) > 11:  # We implicitl switch to bigint for >11
+					column_type = "bigint"
+
 				max_length = max_positive_value[column_type]
 
 				if abs(cint(value)) > max_length:
@@ -966,7 +971,7 @@ class BaseDocument:
 
 		frappe.throw(
 			_("{0}: '{1}' ({3}) will get truncated, as max characters allowed is {2}").format(
-				reference, _(df.label), max_length, value
+				reference, frappe.bold(_(df.label)), max_length, value
 			),
 			frappe.CharacterLengthExceededError,
 			title=_("Value too big"),

@@ -6,6 +6,7 @@ from random import choice
 from threading import Thread
 from time import time
 from unittest.mock import patch
+from urllib.parse import urlencode, urljoin
 
 import requests
 from filetype import guess_mime
@@ -234,16 +235,6 @@ class TestMethodAPI(FrappeAPITestCase):
 			generate_keys("Administrator")
 			frappe.db.commit()
 
-	def test_version(self):
-		# test 1: test for /api/method/version
-		response = self.get(f"{self.METHOD_PATH}/version")
-		json = frappe._dict(response.json)
-
-		self.assertEqual(response.status_code, 200)
-		self.assertIsInstance(json, dict)
-		self.assertIsInstance(json.message, str)
-		self.assertEqual(Version(json.message), Version(frappe.__version__))
-
 	def test_ping(self):
 		# test 2: test for /api/method/ping
 		response = self.get(f"{self.METHOD_PATH}/ping")
@@ -402,3 +393,16 @@ class TestResponse(FrappeAPITestCase):
 
 		self.assertEqual(self.get(file.unique_url, {"sid": self.sid}).text, test_content)
 		self.assertEqual(self.get(file.file_url, {"sid": self.sid}).text, test_content)
+
+	def test_login_redirects(self):
+		expected_redirects = {
+			"/app/user": "/app/user",
+			"/app/user?enabled=1": "/app/user?enabled=1",
+			"http://example.com": "/app",  # No external redirect
+			"https://google.com": "/app",
+			"http://localhost:8000": "/app",
+			"http://localhost/app": "http://localhost/app",
+		}
+		for redirect, expected_redirect in expected_redirects.items():
+			response = self.get(f"/login?{urlencode({'redirect-to':redirect})}", {"sid": self.sid})
+			self.assertEqual(response.location, expected_redirect)

@@ -15,13 +15,13 @@ dependencies = [
     "filetype~=1.2.0",
     "GitPython~=3.1.34",
     "Jinja2~=3.1.2",
-    "Pillow~=10.2.0",
+    "Pillow~=10.3.0",
     "PyJWT~=2.4.0",
     # We depend on internal attributes,
     # do NOT add loose requirements on PyMySQL versions.
-    "PyMySQL==1.0.3",
+    "PyMySQL==1.1.1",
     "PyPDF2~=2.1.0",
-    "PyPika~=0.48.9",
+    "PyPika==0.48.9",
     "PyQRCode~=1.2.1",
     "PyYAML~=6.0.1",
     "RestrictedPython~=6.2",
@@ -35,10 +35,11 @@ dependencies = [
     "chardet~=5.1.0",
     "croniter~=1.3.5",
     "cryptography~=42.0.0",
+    "cssutils~=2.9.0",
     "email-reply-parser~=0.5.12",
     "git-url-parse~=1.2.2",
     "gitdb~=4.0.7",
-    "gunicorn~=21.2.0",
+    "gunicorn~=22.0.0",
     "html5lib~=1.1",
     "ipython~=8.10.0",
     "ldap3~=2.9",
@@ -65,11 +66,11 @@ dependencies = [
     "redis~=3.5.3",
     "hiredis~=2.0.0",
     "requests-oauthlib~=1.3.0",
-    "requests~=2.31.0",
+    "requests~=2.32.0",
     "rq~=1.14.1",
     "rsa>=4.1",
     "semantic-version~=2.10.0",
-    "sqlparse~=0.4.1",
+    "sqlparse~=0.5.0",
     "tenacity~=8.0.1",
     "terminaltables~=3.1.0",
     "traceback-with-variables~=2.0.4",
@@ -129,7 +130,6 @@ ignore = [
     "F403", # can't detect undefined names from * import
     "F405", # can't detect undefined names from * import
     "F722", # syntax error in forward type annotation
-    "F821", # undefined name
     "W191", # indentation contains tabs
     "RUF001", # string contains ambiguous unicode character
 ]

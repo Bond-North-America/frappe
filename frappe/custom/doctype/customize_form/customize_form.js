@@ -134,6 +134,14 @@ frappe.ui.form.on("Customize Form", {
 			const is_autoname_autoincrement = frm.doc.autoname === "autoincrement";
 			frm.set_df_property("naming_rule", "hidden", is_autoname_autoincrement);
 			frm.set_df_property("autoname", "read_only", is_autoname_autoincrement);
+
+			frm.add_custom_button(
+				__("Trim Table"),
+				function () {
+					frm.trigger("trim_table");
+				},
+				__("Actions")
+			);
 		}
 
 		frm.events.setup_export(frm);
@@ -154,6 +162,40 @@ frappe.ui.form.on("Customize Form", {
 		if (doc_type) {
 			setTimeout(() => frm.set_value("doc_type", doc_type, false, true), 1000);
 		}
+	},
+
+	async trim_table(frm) {
+		let dropped_columns = await frappe.xcall(
+			"frappe.custom.doctype.customize_form.customize_form.get_orphaned_columns",
+			{ doctype: frm.doc.doc_type }
+		);
+
+		if (!dropped_columns?.length) {
+			frappe.toast(__("This doctype has no orphan fields to trim"));
+			return;
+		}
+		let msg = __(
+			"Warning: DATA LOSS IMMINENT! Proceeding will permanently delete following database columns from doctype {0}:",
+			[frm.doc.doc_type.bold()]
+		);
+		msg += "<ol>" + dropped_columns.map((col) => `<li>${col}</li>`).join("") + "</ol>";
+		msg += __("This action is irreversible. Do you wish to continue?");
+
+		frappe.confirm(msg, () => {
+			return frm.call({
+				doc: frm.doc,
+				method: "trim_table",
+				callback: function (r) {
+					if (!r.exc) {
+						frappe.show_alert({
+							message: __("Table Trimmed"),
+							indicator: "green",
+						});
+						frappe.customize_form.clear_locals_and_refresh(frm);
+					}
+				},
+			});
+		});
 	},
 
 	setup_export(frm) {
@@ -180,7 +222,10 @@ frappe.ui.form.on("Customize Form", {
 								fieldtype: "Check",
 								fieldname: "with_permissions",
 								label: __("Export Custom Permissions"),
-								default: 1,
+								description: __(
+									"Exported permissions will be force-synced on every migrate overriding any other customization."
+								),
+								default: 0,
 							},
 						],
 						function (data) {
@@ -208,7 +253,7 @@ frappe.ui.form.on("Customize Form", {
 			var fields = $.map(frm.doc.fields, function (df) {
 				return frappe.model.is_value_type(df.fieldtype) ? df.fieldname : null;
 			});
-			fields = ["", "name", "modified"].concat(fields);
+			fields = ["", "name", "creation", "modified"].concat(fields);
 			frm.set_df_property("sort_field", "options", fields);
 		}
 	},

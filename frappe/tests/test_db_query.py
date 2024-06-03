@@ -1075,6 +1075,15 @@ class TestReportview(FrappeTestCase):
 		self.assertNotIn("ifnull", frappe.get_all("User", {"name": ("in", (""))}, run=0))
 		self.assertNotIn("ifnull", frappe.get_all("User", {"name": ("in", ())}, run=0))
 
+	def test_coalesce_with_datetime_ops(self):
+		self.assertNotIn("ifnull", frappe.get_all("User", {"last_active": (">", "2022-01-01")}, run=0))
+		self.assertNotIn("ifnull", frappe.get_all("User", {"creation": ("<", "2022-01-01")}, run=0))
+		self.assertNotIn(
+			"ifnull",
+			frappe.get_all("User", {"last_active": ("between", ("2022-01-01", "2023-01-01"))}, run=0),
+		)
+		self.assertIn("ifnull", frappe.get_all("User", {"last_active": ("<", "2022-01-01")}, run=0))
+
 	def test_ambiguous_linked_tables(self):
 		from frappe.desk.reportview import get
 
@@ -1211,6 +1220,20 @@ class TestReportView(FrappeTestCase):
 		frappe.local.form_dict = frappe._dict(
 			{
 				"doctype": "DocType",
+				"fields": [],
+				"distinct": "true",
+				"limit": limit,
+			}
+		)
+		count = execute_cmd("frappe.desk.reportview.get_count")
+		self.assertIsInstance(count, int)
+		self.assertLessEqual(count, limit)
+
+		# doctype with space in name
+		limit = 2
+		frappe.local.form_dict = frappe._dict(
+			{
+				"doctype": "Role Profile",
 				"fields": [],
 				"distinct": "true",
 				"limit": limit,
