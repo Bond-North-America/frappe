@@ -46,7 +46,6 @@ def get_bootinfo():
 
 	if frappe.session["user"] != "Guest":
 		bootinfo.user_info = get_user_info()
-		bootinfo.sid = frappe.session["sid"]
 
 	bootinfo.modules = {}
 	bootinfo.module_list = []
@@ -114,7 +113,10 @@ def get_bootinfo():
 
 def get_letter_heads():
 	letter_heads = {}
-	for letter_head in frappe.get_all("Letter Head", fields=["name", "content", "footer"]):
+
+	if not frappe.has_permission("Letter Head"):
+		return letter_heads
+	for letter_head in frappe.get_list("Letter Head", fields=["name", "content", "footer"]):
 		letter_heads.setdefault(
 			letter_head.name, {"header": letter_head.content, "footer": letter_head.footer}
 		)
