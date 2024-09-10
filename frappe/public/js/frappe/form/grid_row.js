@@ -505,7 +505,7 @@ export default class GridRow {
 			);
 			if (selectedColumn && !selectedColumn.hidden && show_field(selectedColumn.fieldtype)) {
 				fields.push({
-					label: selectedColumn.label,
+					label: __(selectedColumn.label, null, this.grid.doctype),
 					value: selectedColumn.fieldname,
 					checked: true,
 				});
@@ -520,7 +520,7 @@ export default class GridRow {
 				show_field(column.fieldtype)
 			) {
 				fields.push({
-					label: column.label,
+					label: __(column.label, null, this.grid.doctype),
 					value: column.fieldname,
 					checked: false,
 				});
@@ -835,10 +835,12 @@ export default class GridRow {
 					delete this.grid.filter[df.fieldname];
 				}
 
-				this.grid.grid_sortable.option(
-					"disabled",
-					Object.keys(this.grid.filter).length !== 0
-				);
+				if (this.grid.grid_sortable) {
+					this.grid.grid_sortable.option(
+						"disabled",
+						Object.keys(this.grid.filter).length !== 0
+					);
+				}
 
 				this.grid.prevent_build = true;
 				this.grid.grid_pagination.go_to_page(1);
@@ -1087,12 +1089,6 @@ export default class GridRow {
 		var me = this,
 			parent = column.field_area,
 			df = column.df;
-
-		// no text editor in grid
-		if (df.fieldtype == "Text Editor") {
-			df = Object.assign({}, df);
-			df.fieldtype = "Text";
-		}
 
 		var field = frappe.ui.form.make_control({
 			df: df,
