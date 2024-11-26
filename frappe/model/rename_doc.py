@@ -62,7 +62,7 @@ def update_document_title(
 	title_updated = updated_title and (title_field != "name") and (updated_title != doc.get(title_field))
 	name_updated = updated_name and (updated_name != doc.name)
 
-	queue = kwargs.get("queue") or "default"
+	queue = kwargs.get("queue") or "long"
 
 	if name_updated:
 		if enqueue and not is_scheduler_inactive():
@@ -85,7 +85,7 @@ def update_document_title(
 				save_point=True,
 			)
 
-			doc.queue_action("rename", name=transformed_name, merge=merge, queue=queue)
+			doc.queue_action("rename", name=transformed_name, merge=merge, queue=queue, timeout=36000)
 		else:
 			doc.rename(updated_name, merge=merge)
 
@@ -160,6 +160,7 @@ def rename_doc(
 			force=force,
 			ignore_permissions=ignore_permissions,
 			ignore_if_exists=ignore_if_exists,
+			old_doc=old_doc,
 		)
 
 	if not merge:
@@ -337,6 +338,7 @@ def validate_rename(
 	ignore_permissions: bool = False,
 	ignore_if_exists: bool = False,
 	save_point=False,
+	old_doc: Document | None = None,
 ) -> str:
 	# using for update so that it gets locked and someone else cannot edit it while this rename is going on!
 	if save_point:
@@ -362,7 +364,11 @@ def validate_rename(
 	if not merge and exists and not ignore_if_exists:
 		frappe.throw(_("Another {0} with name {1} exists, select another name").format(doctype, new))
 
-	if not (ignore_permissions or frappe.permissions.has_permission(doctype, "write", raise_exception=False)):
+	kwargs = {"doctype": doctype, "ptype": "write", "raise_exception": False}
+	if old_doc:
+		kwargs |= {"doc": old_doc}
+
+	if not (ignore_permissions or frappe.permissions.has_permission(**kwargs)):
 		frappe.throw(_("You need write permission to rename"))
 
 	if not (force or ignore_permissions) and not meta.allow_rename:
@@ -408,6 +414,7 @@ def update_link_field_values(link_fields: list[dict], old: str, new: str, doctyp
 					# update single docs using ORM rather then query
 					# as single docs also sometimes sets defaults!
 					single_doc.flags.ignore_mandatory = True
+					single_doc.flags.ignore_links = True
 					single_doc.save(ignore_permissions=True)
 			except ImportError:
 				# fails in patches where the doctype has been renamed
