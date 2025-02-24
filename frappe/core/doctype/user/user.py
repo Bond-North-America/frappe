@@ -28,7 +28,7 @@ from frappe.utils import (
 	now_datetime,
 	today,
 )
-from frappe.utils.data import sha256_hash
+from frappe.utils.data import sha256_hash, strip_html
 from frappe.utils.deprecations import deprecated
 from frappe.utils.password import check_password, get_password_reset_limit
 from frappe.utils.password import update_password as _update_password
@@ -91,6 +91,7 @@ class User(Document):
 		self.populate_role_profile_roles()
 		self.check_roles_added()
 		self.set_system_user()
+		self.clean_name()
 		self.set_full_name()
 		self.check_enable_disable()
 		self.ensure_unique_roles()
@@ -166,6 +167,14 @@ class User(Document):
 	def has_website_permission(self, ptype, user, verbose=False):
 		"""Returns true if current user is the session user"""
 		return self.name == frappe.session.user
+
+	def clean_name(self):
+		if self.first_name:
+			self.first_name = strip_html(self.first_name)
+		if self.middle_name:
+			self.middle_name = strip_html(self.middle_name)
+		if self.last_name:
+			self.last_name = strip_html(self.last_name)
 
 	def set_full_name(self):
 		self.full_name = " ".join(filter(None, [self.first_name, self.last_name]))
@@ -920,9 +929,12 @@ def user_query(doctype, txt, searchfield, start, page_len, filters):
 	list_filters = {
 		"enabled": 1,
 		"docstatus": ["<", 2],
-		"name": ["not in", STANDARD_USERS],
-		searchfield: ["like", f"%{txt}%"],
 	}
+
+	# Check if we have a search term, and decide the filters depending on the search term
+	or_filters = [[searchfield, "like", f"%{txt}%"]]
+	if "name" in searchfield:
+		or_filters += [[field, "like", f"%{txt}%"] for field in ("first_name", "middle_name", "last_name")]
 
 	if filters:
 		if not (filters.get("ignore_user_type") and frappe.session.data.user_type == "System User"):
@@ -931,17 +943,16 @@ def user_query(doctype, txt, searchfield, start, page_len, filters):
 		filters.pop("ignore_user_type", None)
 		list_filters.update(filters)
 
-	return [
-		(user.name, user.full_name)
-		for user in frappe.get_list(
-			doctype,
-			filters=list_filters,
-			fields=["name", "full_name"],
-			limit_start=start,
-			limit_page_length=page_len,
-			order_by="name asc",
-		)
-	]
+	return frappe.get_list(
+		doctype,
+		filters=list_filters,
+		fields=["name", "full_name"],
+		limit_start=start,
+		limit_page_length=page_len,
+		order_by="name asc",
+		or_filters=or_filters,
+		as_list=True,
+	)
 
 
 def get_total_users():

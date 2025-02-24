@@ -430,13 +430,15 @@ export default class GridRow {
 
 		$(`
 			<div class='form-group'>
-				<div class='row' style='margin:0px; margin-bottom:10px'>
-					<div class='col-md-8'>
+				<div class='row' style='margin-bottom:10px;'>
+					<div class='col-1'></div>
+					<div class='col-6' style='padding-left:20px;'>
 						${__("Fieldname").bold()}
 					</div>
-					<div class='col-md-4' style='padding-left:5px;'>
+					<div class='col-4'>
 						${__("Column Width").bold()}
 					</div>
+					<div class='col-1'></div>
 				</div>
 				<div class='control-input-wrapper selected-fields'>
 				</div>
@@ -466,6 +468,8 @@ export default class GridRow {
 					sort_options: false,
 				},
 			],
+			secondary_action_label: __("Select All"),
+			secondary_action: () => this.select_all_columns(docfields),
 		});
 
 		d.set_primary_action(__("Add"), () => {
@@ -488,6 +492,17 @@ export default class GridRow {
 		});
 
 		d.show();
+	}
+
+	select_all_columns(docfields) {
+		docfields.forEach((docfield) => {
+			if (docfield.checked) {
+				return;
+			}
+			$(`.checkbox.unit-checkbox input[type="checkbox"][data-unit="${docfield.value}"]`)
+				.prop("checked", true)
+				.trigger("change");
+		});
 	}
 
 	prepare_columns_for_dialog(selected_fields) {
@@ -542,18 +557,19 @@ export default class GridRow {
 						data-label='${docfield.label}' data-type='${docfield.fieldtype}'>
 
 						<div class='row'>
-							<div class='col-md-1' style='padding-top: 2px'>
+							<div class='col-1'>
 								<a style='cursor: grabbing;'>${frappe.utils.icon("drag", "xs")}</a>
 							</div>
-							<div class='col-md-7' style='padding-left:0px; padding-top:3px'>
-								${__(docfield.label)}
+							<div class='col-6'>
+								${__(docfield.label, null, docfield.parent)}
 							</div>
-							<div class='col-md-3' style='padding-left:0px;margin-top:-2px;' title='${__("Columns")}'>
+							<div class='col-4' title='${__("Columns")}'>
 								<input class='form-control column-width input-xs text-right'
+								style='margin-top: -1px;height: 24px; max-width: 80px; background: var(--bg-color);'
 									value='${docfield.columns || cint(d.columns)}'
 									data-fieldname='${docfield.fieldname}' style='background-color: var(--modal-bg); display: inline'>
 							</div>
-							<div class='col-md-1' style='padding-top: 3px'>
+							<div class='col-1'>
 								<a class='text-muted remove-field' data-fieldname='${docfield.fieldname}'>
 									<i class='fa fa-trash-o' aria-hidden='true'></i>
 								</a>
@@ -1107,15 +1123,13 @@ export default class GridRow {
 		// sync get_query
 		field.get_query = this.grid.get_field(df.fieldname).get_query;
 
-		if (!field.df.onchange_modified) {
-			var field_on_change_function = field.df.onchange;
-			field.df.onchange = (e) => {
-				field_on_change_function && field_on_change_function(e);
-				this.refresh_field(field.df.fieldname);
-			};
-
-			field.df.onchange_modified = true;
-		}
+		// df.onchange is common for all rows in grid
+		let field_on_change_function = df.onchange;
+		field.df.change = (e) => {
+			// trigger onchange with current grid row field as "this"
+			field_on_change_function && field_on_change_function.apply(field, [e]);
+			me.refresh_field(field.df.fieldname);
+		};
 
 		field.refresh();
 		if (field.$input) {

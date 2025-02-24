@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+from contextlib import suppress
 from distutils.spawn import find_executable
 from subprocess import getoutput
 from tempfile import mkdtemp, mktemp
@@ -201,7 +202,7 @@ def symlink(target, link_name, overwrite=False):
 		if os.path.isdir(link_name):
 			raise IsADirectoryError(f"Cannot symlink over existing directory: '{link_name}'")
 		try:
-			os.replace(temp_link_name, link_name)
+			shutil.move(temp_link_name, link_name)
 		except AttributeError:
 			os.renames(temp_link_name, link_name)
 	except Exception:
@@ -254,6 +255,9 @@ def bundle(
 	check_node_executable()
 	frappe_app_path = frappe.get_app_path("frappe", "..")
 	frappe.commands.popen(command, cwd=frappe_app_path, env=get_node_env(), raise_err=True)
+
+	with suppress(Exception):
+		frappe.cache().flushall()
 
 
 def watch(apps=None):
