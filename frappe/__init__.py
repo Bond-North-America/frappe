@@ -47,7 +47,7 @@ from .utils.jinja import (
 )
 from .utils.lazy_loader import lazy_import
 
-__version__ = "14.94.1"
+__version__ = "14.96.3"
 __title__ = "Frappe Framework"
 
 controllers = {}
@@ -418,7 +418,7 @@ def _strip_html_tags(message):
 def msgprint(
 	msg: str,
 	title: str | None = None,
-	raise_exception: bool | type[Exception] = False,
+	raise_exception: bool | type[Exception] | Exception = False,
 	as_table: bool = False,
 	as_list: bool = False,
 	indicator: Literal["blue", "green", "orange", "red", "yellow"] | None = None,
@@ -453,6 +453,9 @@ def msgprint(
 		if raise_exception:
 			if inspect.isclass(raise_exception) and issubclass(raise_exception, Exception):
 				raise raise_exception(msg)
+			elif isinstance(raise_exception, Exception):
+				raise_exception.args = (msg,)
+				raise raise_exception
 			else:
 				raise ValidationError(msg)
 
@@ -528,7 +531,7 @@ def clear_last_message():
 
 def throw(
 	msg: str,
-	exc: type[Exception] = ValidationError,
+	exc: type[Exception] | Exception = ValidationError,
 	title: str | None = None,
 	is_minimizable: bool = False,
 	wide: bool = False,
@@ -955,6 +958,7 @@ def has_permission(
 	throw=False,
 	*,
 	parent_doctype=None,
+	ignore_share_permissions=False,
 ):
 	"""
 	Returns True if the user has permission `ptype` for given `doctype` or `doc`
@@ -979,9 +983,13 @@ def has_permission(
 		user=user,
 		raise_exception=throw,
 		parent_doctype=parent_doctype,
+		ignore_share_permissions=ignore_share_permissions,
 	)
 
 	if throw and not out:
+		if doc:
+			frappe.permissions.check_doctype_permission(doctype, ptype)
+
 		document_label = f"{_(doctype)} {doc if isinstance(doc, str) else doc.name}" if doc else _(doctype)
 		frappe.flags.error_message = _("No permission for {0}").format(document_label)
 		raise frappe.PermissionError
@@ -1214,7 +1222,7 @@ def get_last_doc(doctype, filters=None, order_by="creation desc", *, for_update=
 	if d:
 		return get_doc(doctype, d[0], for_update=for_update)
 	else:
-		raise DoesNotExistError
+		raise DoesNotExistError(doctype=doctype)
 
 
 def get_single(doctype):
@@ -2254,11 +2262,15 @@ def log_error(title=None, message=None, reference_doctype=None, reference_name=N
 		return error_log.insert(ignore_permissions=True)
 
 
-def get_desk_link(doctype, name):
+def get_desk_link(doctype, name, show_title_with_name=False):
 	meta = get_meta(doctype)
 	title = get_value(doctype, name, meta.get_title_field())
 
-	html = '<a href="/app/Form/{doctype}/{name}" style="font-weight: bold;">{doctype_local} {title_local}</a>'
+	if show_title_with_name and name != title:
+		html = '<a href="/app/Form/{doctype}/{name}" style="font-weight: bold;">{doctype_local} {name}: {title_local}</a>'
+	else:
+		html = '<a href="/app/Form/{doctype}/{name}" style="font-weight: bold;">{doctype_local} {title_local}</a>'
+
 	return html.format(doctype=doctype, name=name, doctype_local=_(doctype), title_local=_(title))
 
 
@@ -2434,6 +2446,15 @@ def _register_fault_handler():
 	# Some libraries monkey patch stderr, we need actual fd
 	if isinstance(sys.__stderr__, io.TextIOWrapper):
 		faulthandler.register(signal.SIGUSR1, file=sys.__stderr__)
+
+
+def override_whitelisted_method(original_method: str) -> str:
+	"""Return the first override or the original whitelisted method.
+
+	NOTE: in v15, this will change from using the first override to using the last override.
+	"""
+	overrides = get_hooks("override_whitelisted_methods", {}).get(original_method, [])
+	return overrides[0] if overrides else original_method
 
 
 if _tune_gc:
