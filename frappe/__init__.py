@@ -47,7 +47,7 @@ from .utils.jinja import (
 )
 from .utils.lazy_loader import lazy_import
 
-__version__ = "14.96.3"
+__version__ = "14.96.14"
 __title__ = "Frappe Framework"
 
 controllers = {}
@@ -793,7 +793,7 @@ def is_whitelisted(method):
 
 	is_guest = session["user"] == "Guest"
 	if method not in whitelisted or is_guest and method not in guest_methods:
-		summary = _("You are not permitted to access this resource.")
+		summary = _("You are not permitted to access this resource. Login to access")
 		detail = _("Function {0} is not whitelisted.").format(bold(f"{method.__module__}.{method.__name__}"))
 		msg = f"<details><summary>{summary}</summary>{detail}</details>"
 		throw(msg, PermissionError, title=_("Method Not Allowed"))
@@ -1669,7 +1669,7 @@ def get_newargs(fn: Callable, kwargs: dict[str, Any]) -> dict[str, Any]:
 
 
 def make_property_setter(
-	args, ignore_validate=False, validate_fields_for_doctype=True, is_system_generated=True
+	args, ignore_validate=False, validate_fields_for_doctype=True, is_system_generated=True, *, module=None
 ):
 	"""Create a new **Property Setter** (for overriding DocType and DocField properties).
 
@@ -1708,6 +1708,7 @@ def make_property_setter(
 				"doctype": "Property Setter",
 				"doctype_or_field": args.doctype_or_field,
 				"doc_type": doctype,
+				"module": module,
 				"field_name": args.fieldname,
 				"row_name": args.row_name,
 				"property": args.property,
