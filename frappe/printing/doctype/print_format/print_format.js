@@ -23,11 +23,7 @@ frappe.ui.form.on("Print Format", {
 	},
 	render_buttons: function (frm) {
 		frm.page.clear_inner_toolbar();
-<<<<<<< HEAD
-		if (!frm.is_new()) {
-=======
 		if (!frm.is_new() && frm.doc.print_format_for === "Doctype") {
->>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 			if (!frm.doc.custom_format) {
 				frm.add_custom_button(__("Edit Format"), function () {
 					if (!frm.doc.doc_type) {
@@ -75,14 +71,11 @@ frappe.ui.form.on("Print Format", {
 	doc_type: function (frm) {
 		frm.trigger("hide_absolute_value_field");
 	},
-<<<<<<< HEAD
-=======
 	print_format_for: function (frm) {
 		if (frm.doc.print_format_for === "Report") {
 			frm.set_value("print_format_type", "JS");
 		}
 	},
->>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 	hide_absolute_value_field: function (frm) {
 		// TODO: make it work with frm.doc.doc_type
 		// Problem: frm isn't updated in some random cases

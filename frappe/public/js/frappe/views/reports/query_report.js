@@ -1414,13 +1414,6 @@ frappe.views.QueryReport = class QueryReport extends frappe.views.BaseList {
 		});
 	}
 
-<<<<<<< HEAD
-	print_report(print_settings) {
-		const custom_format = this.report_settings.html_format || null;
-		const filters_html = this.get_filters_html_for_print();
-		const landscape = print_settings.orientation == "Landscape";
-
-=======
 	async print_report(print_settings) {
 		let custom_format = this.report_settings.html_format || null;
 		const filters_html = this.get_filters_html_for_print();
@@ -1430,7 +1423,6 @@ frappe.views.QueryReport = class QueryReport extends frappe.views.BaseList {
 			custom_format = await this.get_report_print_format(print_settings.report);
 		}
 
->>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		this.make_access_log("Print", "PDF");
 		frappe.render_grid({
 			template: print_settings.columns ? "print_grid" : custom_format,
@@ -1447,31 +1439,20 @@ frappe.views.QueryReport = class QueryReport extends frappe.views.BaseList {
 		});
 	}
 
-<<<<<<< HEAD
-	pdf_report(print_settings) {
-=======
 	async pdf_report(print_settings) {
->>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		const base_url = frappe.urllib.get_base_url();
 		const print_css = frappe.boot.print_css;
 		const landscape = print_settings.orientation == "Landscape";
 
-<<<<<<< HEAD
-		const custom_format = this.report_settings.html_format || null;
-=======
 		let custom_format = this.report_settings.html_format || null;
->>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		const columns = this.get_columns_for_print(print_settings, custom_format);
 		const data = this.get_data_for_print();
 		const applied_filters = this.get_filter_values();
 
-<<<<<<< HEAD
-=======
 		if (print_settings.report) {
 			custom_format = await this.get_report_print_format(print_settings.report);
 		}
 
->>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		const filters_html = this.get_filters_html_for_print();
 		const template = print_settings.columns || !custom_format ? "print_grid" : custom_format;
 		const content = frappe.render_template(template, {
@@ -1514,8 +1495,6 @@ frappe.views.QueryReport = class QueryReport extends frappe.views.BaseList {
 		frappe.render_pdf(html, print_settings);
 	}
 
-<<<<<<< HEAD
-=======
 	async get_report_print_format(report_name) {
 		const filters = {
 			name: report_name,
@@ -1532,7 +1511,6 @@ frappe.views.QueryReport = class QueryReport extends frappe.views.BaseList {
 		}
 	}
 
->>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 	get_filters_html_for_print() {
 		const applied_filters = this.get_filter_values();
 		return Object.keys(applied_filters)

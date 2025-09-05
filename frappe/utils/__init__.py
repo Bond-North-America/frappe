@@ -247,8 +247,6 @@ def validate_url(
 	return is_valid
 
 
-<<<<<<< HEAD
-=======
 def validate_iban(iban: str, throw: bool = False) -> bool:
 	from frappe import _
 
@@ -287,7 +285,6 @@ def is_valid_iban(iban: str) -> bool:
 	return to_check % 97 == 1
 
 
->>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 def random_string(length: int) -> str:
 	"""generate a random string"""
 	import string

@@ -4,11 +4,7 @@ let isFCUser = false;
 $(document).ready(function () {
 	if (
 		frappe.boot.is_fc_site &&
-<<<<<<< HEAD
-		frappe.boot.setup_complete === 1 &&
-=======
 		!!frappe.boot.setup_complete &&
->>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		!frappe.is_mobile() &&
 		frappe.user.has_role("System Manager")
 	) {

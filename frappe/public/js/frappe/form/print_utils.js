@@ -10,8 +10,6 @@ frappe.ui.get_print_settings = function (pdf, callback, letter_head, pick_column
 
 	var columns = [
 		{
-<<<<<<< HEAD
-=======
 			fieldtype: "Select",
 			fieldname: "orientation",
 			label: __("Orientation"),
@@ -35,7 +33,6 @@ frappe.ui.get_print_settings = function (pdf, callback, letter_head, pick_column
 			}),
 		},
 		{
->>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 			fieldtype: "Check",
 			fieldname: "with_letter_head",
 			label: __("With Letter head"),
@@ -48,19 +45,6 @@ frappe.ui.get_print_settings = function (pdf, callback, letter_head, pick_column
 			options: "Letter Head",
 			default: letter_head || default_letter_head,
 		},
-<<<<<<< HEAD
-		{
-			fieldtype: "Select",
-			fieldname: "orientation",
-			label: __("Orientation"),
-			options: [
-				{ value: "Landscape", label: __("Landscape") },
-				{ value: "Portrait", label: __("Portrait") },
-			],
-			default: "Landscape",
-		},
-=======
->>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 	];
 
 	if (pick_columns) {

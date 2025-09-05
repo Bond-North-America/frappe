@@ -380,8 +380,6 @@ def get_wkhtmltopdf_version():
 			pass
 
 	return wkhtmltopdf_version or "0"
-<<<<<<< HEAD
-=======
 
 
 def pdf_contains_js(file_content):
@@ -411,4 +409,3 @@ def pdf_contains_js(file_content):
 			return False
 
 	return True
->>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
