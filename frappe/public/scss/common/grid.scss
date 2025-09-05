@@ -96,7 +96,11 @@
 .grid-body .data-row {
 	@include get_textstyle("sm", "regular");
 	color: var(--text-muted);
+<<<<<<< HEAD
 	button.col:focus {
+=======
+	button.col:focus-visible {
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		outline: 1px solid #c9c9c9;
 	}
 }

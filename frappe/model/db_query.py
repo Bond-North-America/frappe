@@ -1145,6 +1145,13 @@ from {tables}
 			"version",
 			"substr",
 			"substring",
+<<<<<<< HEAD
+=======
+			"updatexml",
+			"load_file",
+			"session_user",
+			"system_user",
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		}
 
 		for field in parameters.split(","):

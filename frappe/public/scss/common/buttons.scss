@@ -82,7 +82,11 @@
 		background-color: var(--btn-default-hover-bg);
 		color: var(--text-color);
 	}
+<<<<<<< HEAD
 	&:focus {
+=======
+	&:focus-visible {
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		box-shadow: var(--focus-default) !important;
 	}
 }

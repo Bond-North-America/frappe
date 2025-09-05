@@ -31,12 +31,21 @@ def execute():
 			and _is_implicit_int_pk(doctype)
 			and not is_autoincremented(doctype)
 		):
+<<<<<<< HEAD
 			frappe.db.change_column_type(
 				doctype,
 				"name",
 				type=f"varchar({frappe.db.VARCHAR_LEN})",
 				nullable=True,
 			)
+=======
+			if frappe.db.db_type == "mariadb":
+				frappe.db.sql(f"ALTER TABLE `tab{doctype}` MODIFY name varchar({frappe.db.VARCHAR_LEN})")
+			else:
+				frappe.db.sql(
+					f"ALTER TABLE `tab{doctype}` ALTER COLUMN name TYPE varchar({frappe.db.VARCHAR_LEN}) USING name::varchar"
+				)
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 
 
 def _is_implicit_int_pk(doctype: str) -> bool:

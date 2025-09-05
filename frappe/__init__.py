@@ -51,7 +51,11 @@ from .utils.jinja import (
 )
 from .utils.lazy_loader import lazy_import
 
+<<<<<<< HEAD
 __version__ = "15.79.0"
+=======
+__version__ = "15.80.0"
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 __title__ = "Frappe Framework"
 
 # This if block is never executed when running the code. It is only used for
@@ -2299,6 +2303,7 @@ def logger(module=None, with_more_info=False, allow_site=True, filter=None, max_
 	)
 
 
+<<<<<<< HEAD
 def get_desk_link(doctype, name, show_title_with_name=False):
 	meta = get_meta(doctype)
 	title = get_value(doctype, name, meta.get_title_field())
@@ -2309,6 +2314,32 @@ def get_desk_link(doctype, name, show_title_with_name=False):
 		html = '<a href="/app/Form/{doctype}/{name}" style="font-weight: bold;">{doctype_local} {title_local}</a>'
 
 	return html.format(doctype=doctype, name=name, doctype_local=_(doctype), title_local=_(title))
+=======
+def get_desk_link(doctype, name, show_title_with_name=False, open_in_new_tab=False):
+	from urllib.parse import quote
+
+	meta = get_meta(doctype)
+	title = get_value(doctype, name, meta.get_title_field())
+
+	target_attr = ' target="_blank"' if open_in_new_tab else ""
+
+	# encode for href
+	encoded_name = quote(name)
+
+	if show_title_with_name and name != title:
+		html = '<a href="/app/Form/{doctype}/{encoded_name}"{target} style="font-weight: bold;">{doctype_local} {name}: {title_local}</a>'
+	else:
+		html = '<a href="/app/Form/{doctype}/{encoded_name}"{target} style="font-weight: bold;">{doctype_local} {title_local}</a>'
+
+	return html.format(
+		doctype=doctype,
+		name=name,
+		encoded_name=encoded_name,
+		doctype_local=_(doctype),
+		title_local=_(title),
+		target=target_attr,
+	)
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 
 
 def bold(text):

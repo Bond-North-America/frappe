@@ -948,6 +948,12 @@ class BaseDocument:
 
 				frappe.utils.validate_url(data, throw=True)
 
+<<<<<<< HEAD
+=======
+			if data_field_options == "IBAN" and data:
+				frappe.utils.validate_iban(data, throw=True)
+
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 	def _validate_constants(self):
 		if frappe.flags.in_import or self.is_new() or self.flags.ignore_validate_constants:
 			return

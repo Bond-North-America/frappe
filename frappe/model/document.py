@@ -721,9 +721,19 @@ class Document(BaseDocument):
 
 	def is_child_table_same(self, fieldname):
 		"""Validate child table is same as original table before saving"""
+<<<<<<< HEAD
 		value = self.get(fieldname)
 		original_value = self._doc_before_save.get(fieldname)
 		same = True
+=======
+
+		if self.is_new():
+			return False
+
+		same = True
+		value = self.get(fieldname)
+		original_value = self._doc_before_save.get(fieldname)
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 
 		if len(original_value) != len(value):
 			same = False

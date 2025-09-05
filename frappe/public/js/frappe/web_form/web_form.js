@@ -30,6 +30,11 @@ export default class WebForm extends frappe.ui.FieldGroup {
 			this.setup_discard_action();
 		}
 
+<<<<<<< HEAD
+=======
+		this.setup_delete_action();
+
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		this.setup_previous_next_button();
 		this.toggle_section();
 
@@ -174,6 +179,13 @@ export default class WebForm extends frappe.ui.FieldGroup {
 		$(".web-form-footer .discard-btn").on("click", () => this.discard_form());
 	}
 
+<<<<<<< HEAD
+=======
+	setup_delete_action() {
+		$(".web-form-footer .delete-btn").on("click", () => this.delete_form());
+	}
+
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 	discard_form() {
 		let path = window.location.href;
 		// remove new or edit after last / from url
@@ -192,6 +204,27 @@ export default class WebForm extends frappe.ui.FieldGroup {
 		return false;
 	}
 
+<<<<<<< HEAD
+=======
+	delete_form() {
+		const path = window.location.href;
+		frappe.confirm(__("Are you sure you want to delete this record?"), () => {
+			frappe.call({
+				method: "frappe.website.doctype.web_form.web_form.delete",
+				args: {
+					web_form_name: this.name,
+					docname: this.doc.name,
+				},
+				callback: () => {
+					frappe.msgprint(__("Deleted!"));
+					window.location.href = path.substring(0, path.lastIndexOf("/"));
+				},
+			});
+		});
+		return false;
+	}
+
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 	validate_section() {
 		if (this.allow_incomplete) return true;
 

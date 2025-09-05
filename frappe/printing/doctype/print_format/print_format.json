@@ -6,7 +6,13 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+<<<<<<< HEAD
   "doc_type",
+=======
+  "print_format_for",
+  "doc_type",
+  "report",
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
   "module",
   "default_print_language",
   "column_break_3",
@@ -43,14 +49,23 @@
  ],
  "fields": [
   {
+<<<<<<< HEAD
+=======
+   "depends_on": "eval:doc.print_format_for == \"DocType\"",
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
    "fieldname": "doc_type",
    "fieldtype": "Link",
    "in_filter": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "DocType",
+<<<<<<< HEAD
    "options": "DocType",
    "reqd": 1
+=======
+   "mandatory_depends_on": "eval:doc.print_format_for == \"DocType\"",
+   "options": "DocType"
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
   },
   {
    "fieldname": "module",
@@ -88,7 +103,11 @@
    "label": "Custom Format"
   },
   {
+<<<<<<< HEAD
    "depends_on": "custom_format",
+=======
+   "depends_on": "eval:doc.custom_format || doc.print_format_for == \"Report\"",
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
    "fieldname": "section_break_6",
    "fieldtype": "Section Break"
   },
@@ -98,16 +117,29 @@
    "fieldname": "print_format_type",
    "fieldtype": "Select",
    "label": "Print Format Type",
+<<<<<<< HEAD
    "options": "Jinja\nJS"
   },
   {
    "default": "0",
+=======
+   "options": "Jinja\nJS",
+   "read_only_depends_on": "eval:doc.print_format_for == \"Report\""
+  },
+  {
+   "default": "0",
+   "depends_on": "custom_format",
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
    "fieldname": "raw_printing",
    "fieldtype": "Check",
    "label": "Raw Printing"
   },
   {
+<<<<<<< HEAD
    "depends_on": "eval:!doc.raw_printing",
+=======
+   "depends_on": "eval:(!doc.raw_printing) || (doc.print_format_for == \"Report\")",
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
    "fieldname": "html",
    "fieldtype": "Code",
    "label": "HTML",
@@ -263,12 +295,37 @@
    "fieldtype": "Select",
    "label": "PDF Generator",
    "options": "wkhtmltopdf"
+<<<<<<< HEAD
+=======
+  },
+  {
+   "default": "DocType",
+   "fieldname": "print_format_for",
+   "fieldtype": "Select",
+   "label": "Print Format For",
+   "options": "DocType\nReport"
+  },
+  {
+   "depends_on": "eval:doc.print_format_for == \"Report\"",
+   "fieldname": "report",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Report",
+   "mandatory_depends_on": "eval:doc.print_format_for == \"Report\"",
+   "options": "Report"
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
   }
  ],
  "icon": "fa fa-print",
  "idx": 1,
  "links": [],
+<<<<<<< HEAD
  "modified": "2025-02-14 14:49:39.181074",
+=======
+ "modified": "2025-07-02 11:07:42.812225",
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
  "modified_by": "Administrator",
  "module": "Printing",
  "name": "Print Format",
@@ -291,7 +348,11 @@
    "select": 1
   }
  ],
+<<<<<<< HEAD
  "sort_field": "modified",
+=======
+"sort_field": "modified",
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
  "sort_order": "DESC",
  "states": [],
  "track_changes": 1

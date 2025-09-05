@@ -153,6 +153,12 @@ def get_context(context):
 		else:
 			context.template = "website/doctype/web_form/templates/web_form.html"
 
+<<<<<<< HEAD
+=======
+		# By default, assume no delete permissions
+		context.has_delete_permission = False
+
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		# check permissions
 		if frappe.form_dict.name:
 			assert isinstance(frappe.form_dict.name, str | int)
@@ -173,6 +179,13 @@ def get_context(context):
 					_("You don't have the permissions to access this document"), frappe.PermissionError
 				)
 
+<<<<<<< HEAD
+=======
+			context.has_delete_permission = frappe.has_permission(
+				self.doc_type, "delete", frappe.form_dict.name
+			)
+
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		if frappe.local.path == self.route:
 			path = f"/{self.route}/list" if self.show_list else f"/{self.route}/new"
 			frappe.redirect(path)
@@ -276,8 +289,13 @@ def get_context(context):
 			"Cancel",
 			"Discard:Button in web form",
 			"Edit:Button in web form",
+<<<<<<< HEAD
 			"See previous responses:Button in web form",
 			"Edit your response:Button in web form",
+=======
+			"See previous responses::Button in web form",
+			"Edit your response::Button in web form",
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 			"Are you sure you want to discard the changes?",
 			"Mandatory fields required::Error message in web form",
 			"Invalid values for fields::Error message in web form",
@@ -426,7 +444,13 @@ def get_context(context):
 			context.reference_doc = frappe.get_doc(self.doc_type, context.doc_name)
 			context.web_form_title = context.title
 			context.title = (
+<<<<<<< HEAD
 				strip_html(context.reference_doc.get(context.reference_doc.meta.get_title_field()))
+=======
+				strip_html(
+					frappe.cstr(context.reference_doc.get(context.reference_doc.meta.get_title_field()))
+				)
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 				or context.doc_name
 			)
 			context.reference_doc.add_seen()

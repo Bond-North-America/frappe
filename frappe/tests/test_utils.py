@@ -34,6 +34,10 @@ from frappe.utils import (
 	get_site_info,
 	get_sites,
 	get_url,
+<<<<<<< HEAD
+=======
+	is_valid_iban,
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 	money_in_words,
 	parse_timedelta,
 	random_string,
@@ -451,6 +455,29 @@ class TestValidationUtils(FrappeTestCase):
 		for name in invalid_names:
 			self.assertRaises(frappe.InvalidNameError, validate_name, name, True)
 
+<<<<<<< HEAD
+=======
+	def test_validate_iban(self):
+		valid_ibans = [
+			"GB82 WEST 1234 5698 7654 32",
+			"DE91 1000 0000 0123 4567 89",
+			"FR76 3000 6000 0112 3456 7890 189",
+		]
+
+		invalid_ibans = [
+			# wrong checksum (3rd place)
+			"GB72 WEST 1234 5698 7654 32",
+			"DE81 1000 0000 0123 4567 89",
+			"FR66 3000 6000 0112 3456 7890 189",
+		]
+
+		for iban in valid_ibans:
+			self.assertTrue(is_valid_iban(iban))
+
+		for not_iban in invalid_ibans:
+			self.assertFalse(is_valid_iban(not_iban))
+
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 
 class TestImage(FrappeTestCase):
 	def test_strip_exif_data(self):

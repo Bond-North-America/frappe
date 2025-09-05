@@ -26,7 +26,11 @@ class PrintFormat(Document):
 		custom_format: DF.Check
 		default_print_language: DF.Link | None
 		disabled: DF.Check
+<<<<<<< HEAD
 		doc_type: DF.Link
+=======
+		doc_type: DF.Link | None
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		font: DF.Data | None
 		font_size: DF.Int
 		format_data: DF.Code | None
@@ -43,9 +47,17 @@ class PrintFormat(Document):
 		pdf_generator: DF.Literal["wkhtmltopdf"]
 		print_format_builder: DF.Check
 		print_format_builder_beta: DF.Check
+<<<<<<< HEAD
 		print_format_type: DF.Literal["Jinja", "JS"]
 		raw_commands: DF.Code | None
 		raw_printing: DF.Check
+=======
+		print_format_for: DF.Literal["DocType", "Report"]
+		print_format_type: DF.Literal["Jinja", "JS"]
+		raw_commands: DF.Code | None
+		raw_printing: DF.Check
+		report: DF.Link | None
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 		show_section_headings: DF.Check
 		standard: DF.Literal["No", "Yes"]
 
@@ -59,6 +71,13 @@ class PrintFormat(Document):
 		)
 		self.set_onload("print_templates", templates)
 
+<<<<<<< HEAD
+=======
+	def before_save(self):
+		if self.print_format_for == "Report":
+			self.print_format_type = "JS"
+
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 	def get_html(self, docname, letterhead=None):
 		return get_html(self.doc_type, docname, self.name, letterhead)
 
@@ -92,6 +111,12 @@ class PrintFormat(Document):
 		if self.custom_format and not self.html and not self.raw_printing:
 			frappe.throw(_("{0} is required").format(frappe.bold(_("HTML"))), frappe.MandatoryError)
 
+<<<<<<< HEAD
+=======
+		if self.print_format_for == "Report" and not self.report:
+			frappe.throw(_("{0} is required").format(frappe.bold(_("Report"))), frappe.MandatoryError)
+
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 	def extract_images(self):
 		from frappe.core.doctype.file.utils import extract_images_from_html
 

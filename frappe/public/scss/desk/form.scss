@@ -54,11 +54,19 @@
 			margin-left: 10px;
 			position: relative;
 			padding: 0px;
+<<<<<<< HEAD
 			&:focus {
 				outline: 1px solid #c9c9c9;
 			}
 		}
 		&:focus {
+=======
+			&:focus-visible {
+				outline: 1px solid #c9c9c9;
+			}
+		}
+		&:focus-visible {
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 			outline: 1px solid #c9c9c9;
 		}
 	}
@@ -443,7 +451,11 @@
 					border-bottom: 1px solid var(--primary);
 					color: var(--text-color);
 				}
+<<<<<<< HEAD
 				&:focus {
+=======
+				&:focus-visible {
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 					outline: none;
 					font-weight: 600;
 				}

@@ -77,7 +77,11 @@ display_fieldtypes = (
 
 numeric_fieldtypes = ("Currency", "Int", "Long Int", "Float", "Percent", "Check")
 
+<<<<<<< HEAD
 data_field_options = ("Email", "Name", "Phone", "URL", "Barcode")
+=======
+data_field_options = ("Email", "Name", "Phone", "URL", "Barcode", "IBAN")
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 
 default_fields = (
 	"doctype",

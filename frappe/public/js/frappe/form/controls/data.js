@@ -72,6 +72,12 @@ frappe.ui.form.ControlData = class ControlData extends frappe.ui.form.ControlInp
 		if (this.df.options == "Barcode") {
 			this.setup_barcode_field();
 		}
+<<<<<<< HEAD
+=======
+		if (this.df.options == "IBAN") {
+			this.setup_iban_field();
+		}
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 	}
 
 	setup_url_field() {
@@ -117,6 +123,15 @@ frappe.ui.form.ControlData = class ControlData extends frappe.ui.form.ControlInp
 		});
 	}
 
+<<<<<<< HEAD
+=======
+	setup_iban_field() {
+		this.$input.on("blur", () => {
+			this.set_formatted_input(this.get_input_value());
+		});
+	}
+
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 	setup_copy_button() {
 		if (this.df.with_copy_button) {
 			this.$wrapper
@@ -256,8 +271,22 @@ frappe.ui.form.ControlData = class ControlData extends frappe.ui.form.ControlInp
 		return this.$input ? this.$input.val() : undefined;
 	}
 	format_for_input(val) {
+<<<<<<< HEAD
 		return val == null ? "" : val;
 	}
+=======
+		if (this.df.options == "IBAN" && val) {
+			return frappe.utils.get_formatted_iban(val);
+		}
+		return val == null ? "" : val;
+	}
+	parse(value) {
+		if (this.df.options == "IBAN" && value) {
+			return value.replaceAll(" ", "");
+		}
+		return value;
+	}
+>>>>>>> 6ae7e0b70212ced968735c92456deb093205ce41
 	validate(v) {
 		if (!v) {
 			return "";
