@@ -20,14 +20,14 @@ dependencies = [
     # We depend on internal attributes,
     # do NOT add loose requirements on PyMySQL versions.
     "PyMySQL==1.1.1",
-    "pypdf==6.4.0",
+    "pypdf==6.6.0",
     "PyPika==0.48.9",
     "PyQRCode~=1.2.1",
     "PyYAML~=6.0.2",
     "RestrictedPython~=8.0",
     "WeasyPrint==59.0",
     "pydyf==0.10.0",
-    "Werkzeug~=3.1.4",
+    "Werkzeug==3.1.5",
     "Whoosh~=2.7.4",
     "beautifulsoup4~=4.12.2",
     "bleach-allowlist~=1.0.3",
@@ -101,7 +101,7 @@ build-backend = "flit_core.buildapi"
 [tool.bench.dev-dependencies]
 coverage = "~=6.5.0"
 Faker = "~=18.10.1"
-pyngrok = "~=6.0.0"
+pyngrok = "~=7.5.0"
 unittest-xml-reporting = "~=3.2.0"
 watchdog = "~=3.0.0"
 hypothesis = "~=6.77.0"
